@@ -38,6 +38,16 @@
   .st{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px}
   .st-new{background:#fff3cd;color:#8a6100}.st-confirmed{background:#dbeafe;color:#1e40af}.st-shipped{background:#ede9fe;color:#5b21b6}
   .st-delivered{background:#dcfce7;color:#166534}.st-returned{background:#fee2e2;color:#991b1b}.st-cancelled{background:#e5e7eb;color:#374151}
+  .st-kpis{grid-template-columns:repeat(5,1fr);margin-top:0}
+  .st-card{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
+  .st-card h3{margin:0 0 10px;font-size:17px}
+  .st-scroll{overflow-x:auto}
+  table.st{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+  table.st th{text-align:right;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.st td{padding:8px;border-bottom:1px solid #EEF0EC;font-variant-numeric:tabular-nums}
+  .rt{font-weight:700;padding:2px 8px;border-radius:999px;font-size:13px}
+  .rt.good{background:#dcfce7;color:#166534}.rt.mid{background:#fff3cd;color:#8a6100}.rt.bad{background:#fee2e2;color:#991b1b}
+  @media (max-width:800px){.st-kpis{grid-template-columns:repeat(2,1fr)}}
   .note{width:100%;font:inherit;font-size:13px;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin-top:6px}
   .login{max-width:380px;margin:60px auto}
   .empty{text-align:center;color:var(--muted);padding:40px 0}
@@ -196,11 +206,13 @@
     const counts = {}; V.forEach(o => counts[o.status] = (counts[o.status]||0) + 1);
     $("#tabs").innerHTML = [["all","الكل",V.length], ...Object.entries(STATUS).map(([k,v]) => [k,v,counts[k]||0])]
       .map(([k,v,c]) => `<button class="tab ${tab===k?"on":""}" data-t="${k}">${v}<i>${c}</i></button>`).join("")
-      + `<button class="tab ${tab==="leads"?"on":""}" data-t="leads">📝 فورمات ناقصة<i>${leadsView().length}</i></button>`;
+      + `<button class="tab ${tab==="leads"?"on":""}" data-t="leads">📝 فورمات ناقصة<i>${leadsView().length}</i></button>`
+      + `<button class="tab ${tab==="stats"?"on":""}" data-t="stats">📊 إحصائيات</button>`;
     document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
 
     const q = $("#q").value.trim();
     if (tab === "leads") { renderLeads(q); return; }
+    if (tab === "stats") { renderStats(); return; }
     const phoneCount = {}; orders.forEach(o => phoneCount[o.phone] = (phoneCount[o.phone]||0) + 1);
     const rows = V.filter(o => (tab === "all" || o.status === tab) &&
       (!q || [o.customer_name, o.phone, o.order_no].some(x => String(x||"").includes(q))));
@@ -238,6 +250,49 @@
     });
   }
 
+  // ---------- الإحصائيات ----------
+  function renderStats(){
+    const V = view();
+    if (!V.length) { $("#list").innerHTML = `<div class="empty">مفيش طلبات في الفترة دي لسه.</div>`; return; }
+    const isDel = o => o.status === "delivered", isRet = o => o.status === "returned";
+    const rate = (d, r) => (d + r) ? Math.round(d / (d + r) * 100) : null;
+    const pct = v => v === null ? "—" : v + "%";
+    const real = V.filter(o => o.status !== "cancelled");
+    const del = real.filter(isDel), ret = real.filter(isRet);
+    const revBy = {}; del.forEach(o => revBy[o.currency] = (revBy[o.currency]||0) + o.total);
+    const aovBy = {}; const cnt = {}; real.forEach(o => { aovBy[o.currency] = (aovBy[o.currency]||0) + o.total; cnt[o.currency] = (cnt[o.currency]||0) + 1; });
+    const fmtCur = obj => Object.keys(obj).length ? Object.entries(obj).map(([c,v]) => money(v,c)).join(" + ") : "0";
+    const aov = Object.fromEntries(Object.entries(aovBy).map(([c,v]) => [c, Math.round(v / cnt[c])]));
+    const addonRate = real.length ? Math.round(real.filter(o => o.addon_id).length / real.length * 100) : 0;
+    const multiRate = real.length ? Math.round(real.filter(o => o.qty > 1).length / real.length * 100) : 0;
+    const cancelRate = Math.round(V.filter(o => o.status === "cancelled").length / V.length * 100);
+    const open = real.filter(o => ["new","confirmed","shipped"].includes(o.status)).length;
+
+    const group = (keyFn, label) => {
+      const g = {};
+      real.forEach(o => { const k = keyFn(o) || "غير معروف"; (g[k] = g[k] || { n:0, d:0, r:0, rev:{} }); g[k].n++; if (isDel(o)) { g[k].d++; g[k].rev[o.currency] = (g[k].rev[o.currency]||0) + o.total; } if (isRet(o)) g[k].r++; });
+      const rows = Object.entries(g).sort((a,b) => b[1].n - a[1].n);
+      return `<div class="st-card"><h3>${label}</h3><div class="st-scroll"><table class="st"><thead><tr><th>${label}</th><th>طلبات</th><th>اتسلم</th><th>مرتجع</th><th>نسبة التسليم</th><th>مبيعات اتسلمت</th></tr></thead><tbody>${
+        rows.map(([k,v]) => { const r = rate(v.d, v.r); const cls = r === null ? "" : r >= 75 ? "good" : r >= 60 ? "mid" : "bad";
+          return `<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.d}</td><td>${v.r}</td><td><span class="rt ${cls}">${pct(r)}</span></td><td>${fmtCur(v.rev)}</td></tr>`; }).join("")
+      }</tbody></table></div></div>`;
+    };
+    const srcName = s => { if (!s) return "مباشر"; const x = String(s).split("|")[0].toLowerCase(); return ({facebook:"فيسبوك",fb:"فيسبوك",instagram:"إنستجرام",ig:"إنستجرام",tiktok:"تيك توك",whatsapp:"واتساب",direct:"مباشر"})[x] || s; };
+
+    $("#list").innerHTML = `
+      <div class="kpis st-kpis">
+        <div class="kpi"><small>نسبة التسليم (اتسلم ÷ اتسلم+مرتجع)</small><b>${pct(rate(del.length, ret.length))}</b></div>
+        <div class="kpi"><small>مبيعات اتسلمت</small><b>${fmtCur(revBy)}</b></div>
+        <div class="kpi"><small>متوسط قيمة الطلب</small><b>${fmtCur(aov)}</b></div>
+        <div class="kpi"><small>طلبات لسه مفتوحة</small><b>${open}</b></div>
+        <div class="kpi"><small>بياخدوا الإضافة / عرض القطعتين</small><b>${addonRate}% / ${multiRate}%</b></div>
+      </div>
+      <p class="meta" style="margin:0 0 12px">الملغي (${cancelRate}% من الطلبات) مش داخل في الحسابات. النسبة بتظهر بس للي وصل لنتيجة (اتسلم أو مرتجع). أخضر ≥ 75% • أصفر 60–74% • أحمر أقل من 60%.</p>
+      ${group(o => srcName(o.source), "مصدر الطلب")}
+      ${group(o => (o.country === "SA" ? "🇸🇦 " : "") + o.governorate, "المحافظة / المنطقة")}
+      ${group(o => o.product_name, "المنتج")}`;
+  }
+
   function leadsView(){ return leads.filter(l => !$("#cc").value || l.country === $("#cc").value); }
   function renderLeads(q){
     const rows = leadsView().filter(l => !q || [l.name, l.phone].some(x => String(x||"").includes(q)));
@@ -268,7 +323,7 @@
   $("#csv").onclick = () => {
     const list = view().filter(o => tab === "all" ? true : o.status === tab);
     if (!list.length) { alert("مفيش طلبات في التاب ده."); return; }
-    if (tab === "leads") { alert("التصدير للطلبات بس."); return; }
+    if (tab === "leads" || tab === "stats") { alert("التصدير للطلبات بس — اختار تاب طلبات."); return; }
     const head = ["الدولة","العملة","رقم الطلب","اسم العميل","الموبايل","المحافظة","المدينة","العنوان","علامة مميزة","المنتج","الكمية","مبلغ التحصيل","ملاحظات","الحالة","التاريخ"];
     const cell = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
     const lines = [head.map(cell).join(",")].concat(list.map(o => [o.country,o.currency,o.order_no,o.customer_name,o.phone,o.governorate,o.city,o.address,o.landmark,o.product_name + (o.addon_name ? " + " + o.addon_name : ""),o.qty,o.total,o.notes,STATUS[o.status],new Date(o.created_at).toLocaleDateString("en-GB")].map(cell).join(",")));
