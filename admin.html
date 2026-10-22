@@ -106,12 +106,17 @@
 
   if (!S.supabaseUrl || !S.supabaseAnonKey) { $("#setup").hidden = false; return; }
   const linkType = (location.hash.match(/type=(invite|recovery|signup|magiclink)/) || [])[1];
+  const hp = new URLSearchParams(location.hash.slice(1));
+  const linkToken = hp.get("access_token"), linkRefresh = hp.get("refresh_token");
+  const linkErr = hp.get("error_description");
   const sb = supabase.createClient(S.supabaseUrl, S.supabaseAnonKey);
 
   let orders = [], leads = [], tab = "new";
   const FLAG = { refuser:"⛔ رفض طلبين قبل كده", duplicate:"⚠ عنده طلب مفتوح" };
 
   async function boot(){
+    if (linkErr) { $("#loginbox").hidden = false; const m = $("#loginmsg"); m.textContent = "اللينك ده انتهى أو اتستخدم قبل كده. اكتب إيميلك ودوس «نسيت كلمة السر» تاني."; m.classList.add("show"); history.replaceState(null, "", location.pathname); return; }
+    if (linkToken && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
     const { data:{ session } } = await sb.auth.getSession();
     if (session && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
     if (!session) { $("#loginbox").hidden = false; return; }
@@ -131,9 +136,22 @@
     e.preventDefault();
     const f = e.target, m = $("#pwmsg"); m.classList.remove("show");
     if (f.p1.value !== f.p2.value) { m.textContent = "الكلمتين مش زي بعض."; m.classList.add("show"); return; }
-    const { error } = await sb.auth.updateUser({ password: f.p1.value });
-    if (error) { m.textContent = "مقدرتش أحفظ: " + error.message; m.classList.add("show"); return; }
-    location.reload();
+    const btn = f.querySelector("button"); btn.disabled = true;
+    let ok = false, msg = "";
+    if (linkToken) {
+      // تحديث كلمة السر مباشرة بالتوكن اللي في اللينك (بيشتغل حتى في متصفح Gmail/Google)
+      const r = await fetch(S.supabaseUrl.replace(/\/$/, "") + "/auth/v1/user", { method: "PUT",
+        headers: { "Content-Type": "application/json", apikey: S.supabaseAnonKey, Authorization: "Bearer " + linkToken },
+        body: JSON.stringify({ password: f.p1.value }) });
+      ok = r.ok; if (!ok) { const j = await r.json().catch(() => ({})); msg = j.msg || j.message || j.error_description || r.status; }
+      if (ok && linkRefresh) { try { await sb.auth.setSession({ access_token: linkToken, refresh_token: linkRefresh }); } catch (e) {} }
+    } else {
+      const { error } = await sb.auth.updateUser({ password: f.p1.value });
+      ok = !error; msg = error && error.message;
+    }
+    btn.disabled = false;
+    if (!ok) { m.textContent = "مقدرتش أحفظ: " + msg + " — اطلب لينك جديد من «نسيت كلمة السر»."; m.classList.add("show"); return; }
+    location.replace(location.pathname);
   };
   $("#forgot").onclick = async e => {
     e.preventDefault();
