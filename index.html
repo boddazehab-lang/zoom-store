@@ -1,13 +1,31 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script><title>{store}</title><meta name="description" content="منتجات عملية بالدفع عند الاستلام وشحن مجاني لكل مصر"></head>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0F1E33"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script><title>{store}</title><meta name="description" content="أدوات بتخليك تشوف أبعد وتشوف جوّه — الدفع عند الاستلام وشحن مجاني."></head>
 <body data-page="home">
+<section class="hero"><div class="wrap">
+  <div>
+    <h1>شوف أبعد.<br>وشوف جوّه.</h1>
+    <p class="lead" id="store-tagline"></p>
+    <div class="hero-actions"><a class="btn btn-primary" href="#products">شوف المنتجات</a><a class="btn btn-ghost" href="#how">إزاي بتطلب؟</a></div>
+  </div>
+  <div class="lens" id="hero-lens"></div>
+</div>
+<div class="wrap"><div class="assure" id="assure"></div></div>
+</section>
 <main class="wrap">
-  <section class="hero"><h1>منتجات عملية بتفرق في يومك</h1><p id="store-tagline"></p></section>
-  <section class="trust">
-    <div>💵 الدفع عند الاستلام<small>متدفعش غير لما تستلم</small></div>
-    <div>🚚 شحن مجاني<small>لكل المحافظات</small></div>
-    <div>🔁 استبدال 14 يوم<small>لو فيه عيب صناعة</small></div>
-    <div>💬 دعم واتساب<small>بنرد بسرعة</small></div>
+  <section class="rows" id="products"></section>
+  <section class="block" id="how">
+    <h2 class="t">إزاي بتطلب</h2>
+    <ol class="steps">
+      <li><h3>اطلب من الموقع</h3><p>اختار المنتج واكتب اسمك وعنوانك. مش هتدفع حاجة دلوقتي.</p></li>
+      <li><h3>هنكلمك نأكد</h3><p>هنبعتلك على واتساب أو نتصل بيك نتأكد من الطلب والعنوان.</p></li>
+      <li><h3>استلم وادفع</h3><p>المندوب بيوصلك، تشوف المنتج، وتدفع كاش وإنت بتستلم.</p></li>
+    </ol>
   </section>
-  <section class="grid" id="grid"></section>
+  <section class="block faq" id="faq" style="padding-top:0">
+    <h2 class="t">أسئلة بتتسأل كتير</h2>
+    <details><summary>هدفع إمتى؟</summary><p>لما المندوب يسلّمك الطلب. مفيش أي دفع أونلاين.</p></details>
+    <details><summary>الطلب بيوصل في قد إيه؟</summary><p id="faq-days"></p></details>
+    <details><summary>لو المنتج فيه مشكلة؟</summary><p id="faq-return"></p></details>
+    <details><summary>أقدر أسأل قبل ما أطلب؟</summary><p>أكيد. كلمنا على واتساب من الزرار اللي فوق وهنرد عليك.</p></details>
+  </section>
 </main>
 </body></html>
