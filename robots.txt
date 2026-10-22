@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /zoom-store/admin.html
+Disallow: /zoom-store/thanks.html
+Disallow: /zoom-store/track.html
+Sitemap: https://boddazehab-lang.github.io/zoom-store/sitemap.xml

@@ -1,0 +1,15 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#23302A"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23D9541A'/%3E%3Ctext x='32' y='45' font-family='Arial Black,Arial' font-weight='900' font-size='36' text-anchor='middle' fill='white'%3EO%3C/text%3E%3Crect x='6' y='6' width='52' height='52' rx='8' fill='none' stroke='%2323302A' stroke-width='4'/%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script><title>تتبع طلبك | {store}</title><meta name="description" content="اعرف حالة طلبك من Ops's Store برقم الطلب ورقم موبايلك."><meta property="og:type" content="website"><meta property="og:site_name" content="Ops's Store"><meta property="og:title" content="تتبع طلبك | Ops&#39;s Store"><meta property="og:description" content="أدوات عملية جرّبناها بنفسنا قبل ما نبيعها — الدفع عند الاستلام وشحن مجاني."><meta property="og:image" content="https://boddazehab-lang.github.io/zoom-store/og.png"><meta property="og:locale" content="ar_EG"><meta name="twitter:card" content="summary_large_image"><meta name="robots" content="noindex"></head>
+
+<body data-page="track">
+<main class="wrap" style="max-width:640px;padding-top:40px;padding-bottom:60px">
+  <h1 style="font-size:clamp(28px,4vw,40px);font-weight:900;margin:0 0 6px">تتبع طلبك</h1>
+  <p style="color:var(--muted);margin:0 0 22px">اكتب رقم الطلب اللي ظهرلك بعد ما طلبت، ورقم الموبايل اللي طلبت بيه.</p>
+  <form id="trackform" class="section" novalidate>
+    <div class="field"><label for="tno">رقم الطلب</label><input id="tno" name="tno" dir="ltr" style="text-align:right" placeholder="EG261022-0001" required><div class="err"></div></div>
+    <div class="field"><label for="tph">رقم الموبايل</label><input id="tph" name="tph" type="tel" inputmode="tel" dir="ltr" style="text-align:right" required><div class="err"></div></div>
+    <button class="btn btn-primary btn-full" type="submit">اعرف حالة الطلب</button>
+    <div class="formmsg" id="tmsg"></div>
+  </form>
+  <div id="tresult"></div>
+</main>
+</body></html>

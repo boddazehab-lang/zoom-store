@@ -102,7 +102,7 @@
     top.className = "topbar"; top.textContent = C.shippingNote;
     const h = document.createElement("header"); h.className = "site";
     h.innerHTML = `<div class="wrap"><a class="logo" href="index.html" aria-label="${S.name}">${TAG()}<span class="ar">${S.nameAr || ""}</span></a>
-      <nav class="nav" aria-label="أقسام الموقع"><a href="index.html#products">المنتجات</a><a href="index.html#how">إزاي بتطلب</a><a href="index.html#faq">أسئلة</a></nav>
+      <nav class="nav" aria-label="أقسام الموقع"><a href="index.html#products">المنتجات</a><a href="index.html#how">إزاي بتطلب</a><a href="index.html#faq">أسئلة</a><a href="track.html">تتبع طلبك</a></nav>
       <span class="hdr-r">${Object.keys(S.countries).length > 1 ? `<select id="ccsel" aria-label="الدولة">${Object.entries(S.countries).map(([k, v]) => `<option value="${k}" ${k === CC ? "selected" : ""}>${v.flag} ${v.name}</option>`).join("")}</select>` : ""}
       <a class="wa-link" href="${waLink("السلام عليكم، عندي سؤال")}" target="_blank" rel="noopener">${SVG.chat}<span>واتساب</span></a></span></div>`;
     document.body.prepend(h); document.body.prepend(top);
@@ -112,6 +112,7 @@
     f.innerHTML = `<div class="wrap">
       <div>${TAG("on-dark")}<p style="margin-top:12px;max-width:36ch">${S.tagline}</p></div>
       <div><h4>الطلب والتوصيل</h4><p>التوصيل ${S.deliveryDays}</p><p>الدفع عند الاستلام</p><p>${S.returnPolicy}</p></div>
+      <div><h4>روابط</h4><p><a href="track.html">تتبع طلبك</a></p><p><a href="policies.html#returns">الاستبدال والاسترجاع</a></p><p><a href="policies.html#privacy">الخصوصية</a></p></div>
       <div><h4>كلمنا</h4><p><a href="${waLink("السلام عليكم")}" target="_blank" rel="noopener">واتساب</a></p><p>${S.founders || ""}</p></div>
       <div class="base"><span>© ${new Date().getFullYear()} ${S.name}</span><span>${C.flag} ${C.name}</span></div></div>`;
     document.body.append(f);
@@ -297,6 +298,37 @@
     $("#odetails").textContent = o.name ? `${o.name} — الإجمالي ${money(o.total)} (تدفعه عند الاستلام)` : "";
     $("#confirmwa").href = waLink(`السلام عليكم، أنا ${o.cname || ""} وعايز أأكد طلبي رقم ${no}${o.name ? ` (${o.name})` : ""}`);
     $("#days").textContent = S.deliveryDays;
+    const tl = $("#tracklink"); if (tl) tl.href = "track.html?o=" + encodeURIComponent(no);
+  }
+
+  // ---------- Track ----------
+  function renderTrack() {
+    const f = $("#trackform"), STEPS = [["new","اتسجل"],["confirmed","اتأكد"],["shipped","اتشحن"],["delivered","اتسلم"]];
+    const qs = new URLSearchParams(location.search); if (qs.get("o")) f.tno.value = qs.get("o");
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const m = $("#tmsg"); m.className = "formmsg"; $("#tresult").innerHTML = "";
+      const no = f.tno.value.trim(), ph = f.tph.value;
+      if (no.length < 6 || ph.replace(/\D/g, "").length < 9) { m.textContent = "اكتب رقم الطلب ورقم الموبايل صح."; m.classList.add("show","error"); return; }
+      const btn = f.querySelector("button"); btn.disabled = true;
+      try {
+        const r = await fetch(S.supabaseUrl.replace(/\/$/, "") + "/rest/v1/rpc/track_order", { method: "POST",
+          headers: { "Content-Type": "application/json", apikey: S.supabaseAnonKey, Authorization: "Bearer " + S.supabaseAnonKey },
+          body: JSON.stringify({ p_order_no: no, p_phone: ph.replace(/[٠-٩]/g, c => "٠١٢٣٤٥٦٧٨٩".indexOf(c)) }) });
+        const rows = await r.json();
+        if (!r.ok || !rows.length) { m.textContent = "ملقيناش طلب بالرقمين دول. اتأكد منهم أو كلمنا على واتساب."; m.classList.add("show","error"); return; }
+        const o = rows[0], cur = o.currency === "SAR" ? "ر.س" : "ج.م";
+        const idx = STEPS.findIndex(x => x[0] === o.status);
+        const special = { returned: "الطلب رجع ومتسلمش.", cancelled: "الطلب ده اتلغى." }[o.status];
+        $("#tresult").innerHTML = `<div class="section"><h2 style="margin-bottom:4px">طلب ${o.order_no}</h2>
+          <p style="margin:0 0 16px;color:var(--muted)">${o.product_name} × ${o.qty}${o.addon_name ? " + " + o.addon_name : ""} — ${Number(o.total).toLocaleString("ar-EG")} ${cur}</p>
+          ${special ? `<div class="honest">${special} لو فيه حاجة غلط كلمنا على واتساب.</div>` :
+          `<ol class="track">${STEPS.map((s, i) => `<li class="${i <= idx ? "done" : ""}${i === idx ? " now" : ""}">${s[1]}</li>`).join("")}</ol>
+           <p style="margin:14px 0 0;color:var(--muted);font-size:14px">${o.status === "delivered" ? "اتسلم. نتمنى المنتج يعجبك!" : "التوصيل المتوقع: " + etaFor(o.governorate) + " من تأكيد الطلب."}</p>`}
+          <p style="margin:16px 0 0"><a class="btn btn-ghost btn-full" href="${waLink("السلام عليكم، بسأل عن طلبي رقم " + o.order_no)}" target="_blank" rel="noopener">اسأل عن الطلب على واتساب</a></p></div>`;
+      } catch (err) { m.textContent = "حصلت مشكلة. جرب تاني."; m.classList.add("show","error"); }
+      finally { btn.disabled = false; }
+    };
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -305,5 +337,6 @@
     if (page === "home") renderHome();
     if (page === "product") renderProduct();
     if (page === "thanks") renderThanks();
+    if (page === "track") renderTrack();
   });
 })();
