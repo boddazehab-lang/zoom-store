@@ -1,0 +1,29 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script><title>{store}</title></head>
+<body data-page="product">
+<main class="wrap">
+  <section class="pp" id="pp"></section>
+  <section id="extra"></section>
+  <section class="section order" id="order">
+    <h2>اطلب دلوقتي <small style="font-size:14px;color:var(--muted);font-weight:400">ادفع عند الاستلام</small></h2>
+    <form id="orderform" novalidate autocomplete="on">
+      <div class="field"><label for="name">الاسم بالكامل</label><input id="name" name="name" autocomplete="name" required><div class="err"></div></div>
+      <div class="field"><label for="phone">رقم الموبايل</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01xxxxxxxxx" dir="ltr" style="text-align:right" required><div class="err"></div></div>
+      <div class="row2">
+        <div class="field"><label for="gov">المحافظة</label><select id="gov" name="gov" required></select><div class="err"></div></div>
+        <div class="field"><label for="city">المدينة / المنطقة</label><input id="city" name="city" required><div class="err"></div></div>
+      </div>
+      <div class="field"><label for="address">العنوان بالتفصيل</label><input id="address" name="address" autocomplete="street-address" placeholder="الشارع، رقم العمارة، الدور، الشقة" required><div class="err"></div></div>
+      <div class="field"><label for="landmark">علامة مميزة جنبك (بتساعد المندوب يوصلك)</label><input id="landmark" name="landmark" placeholder="مثال: جنب صيدلية …"></div>
+      <div class="field"><label for="notes">ملاحظات (اختياري)</label><textarea id="notes" name="notes" rows="2"></textarea></div>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="field"><label>اختار الكمية</label><div class="offers" id="offers"></div></div>
+      <label class="bump" id="bump" hidden><input type="checkbox" id="bumpcb"><span id="bumptxt"></span></label>
+      <div class="summary"><span>الإجمالي (شامل الشحن)</span><span id="total"></span></div>
+      <button type="submit" class="btn btn-primary" style="width:100%">تأكيد الطلب</button>
+      <div class="formmsg" id="formmsg"></div>
+      <p style="font-size:13px;color:var(--muted);text-align:center;margin:10px 0 0">هنتواصل معاك على واتساب أو تليفون لتأكيد الطلب قبل الشحن. لو كتبت رقمك ومكمّلتش الطلب ممكن نبعتلك رسالة نساعدك.</p>
+    </form>
+  </section>
+</main>
+<div class="buybar" id="buybar"><div><b class="bb-price"></b></div><a href="#order" class="btn btn-primary">اطلب دلوقتي</a></div>
+</body></html>

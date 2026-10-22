@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>لوحة التحكم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<style>
+  body{background:#eef0f2}
+  .bar{background:var(--ink);color:#fff}
+  .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:56px}
+  .bar b{font-size:18px}
+  .bar button{background:transparent;color:#fff;border:1px solid #ffffff55;border-radius:10px;padding:6px 12px;font:inherit;cursor:pointer}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+  .kpi{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .kpi small{color:var(--muted);font-size:13px;display:block}
+  .kpi b{font-size:24px}
+  @media (max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+  .tools select,.tools input{font:inherit;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff}
+  .tools input{flex:1;min-width:180px}
+  .tools .btn{padding:9px 14px;font-size:14px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .tab{border:0;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+  .tab.on{background:var(--brand);color:#fff}
+  .tab i{font-style:normal;opacity:.7;margin-inline-start:4px}
+  .ord{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:1.3fr 1fr auto;gap:10px;align-items:center}
+  @media (max-width:800px){.ord{grid-template-columns:1fr}}
+  .ord .no{font-weight:800}
+  .ord .meta{color:var(--muted);font-size:13px}
+  .ord .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .ord .acts a,.ord .acts select{font:inherit;font-size:13px;padding:7px 10px;border-radius:9px;border:1.5px solid var(--line);background:#fff;text-decoration:none}
+  .ord .acts a.wa{background:#1f9d55;color:#fff;border-color:#1f9d55}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px}
+  .st-new{background:#fff3cd;color:#8a6100}.st-confirmed{background:#dbeafe;color:#1e40af}.st-shipped{background:#ede9fe;color:#5b21b6}
+  .st-delivered{background:#dcfce7;color:#166534}.st-returned{background:#fee2e2;color:#991b1b}.st-cancelled{background:#e5e7eb;color:#374151}
+  .note{width:100%;font:inherit;font-size:13px;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin-top:6px}
+  .login{max-width:380px;margin:60px auto}
+  .empty{text-align:center;color:var(--muted);padding:40px 0}
+  .dup{color:var(--danger);font-weight:700;font-size:12px}
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap"><b id="title">لوحة التحكم</b><span><button id="refresh" hidden>تحديث ↻</button> <button id="logout" hidden>خروج</button></span></div></div>
+
+<main class="wrap">
+  <section id="loginbox" class="section login" hidden>
+    <h2>دخول الأدمن</h2>
+    <form id="loginform">
+      <div class="field"><label>الإيميل</label><input name="email" type="email" required dir="ltr"></div>
+      <div class="field"><label>كلمة السر</label><input name="password" type="password" required dir="ltr"></div>
+      <button class="btn btn-primary" style="width:100%">دخول</button>
+      <div class="formmsg error" id="loginmsg"></div>
+      <p style="text-align:center;margin:12px 0 0"><a href="#" id="forgot" style="font-size:14px">نسيت كلمة السر / أول مرة تدخل؟</a></p>
+    </form>
+  </section>
+
+  <section id="setpw" class="section login" hidden>
+    <h2>اختار كلمة السر بتاعتك</h2>
+    <p class="meta" style="color:var(--muted)">دي اللي هتدخل بيها لوحة التحكم بعد كده. على الأقل 10 حروف.</p>
+    <form id="pwform">
+      <div class="field"><label>كلمة السر الجديدة</label><input name="p1" type="password" minlength="10" required dir="ltr" autocomplete="new-password"></div>
+      <div class="field"><label>اكتبها تاني</label><input name="p2" type="password" minlength="10" required dir="ltr" autocomplete="new-password"></div>
+      <button class="btn btn-primary" style="width:100%">حفظ ودخول</button>
+      <div class="formmsg error" id="pwmsg"></div>
+    </form>
+    <p style="margin-top:14px"><a href="#" id="forgot2" hidden></a></p>
+  </section>
+
+  <section id="setup" class="section" hidden>
+    <h2>لسه محتاج تربط قاعدة البيانات</h2>
+    <p>افتح ملف <b>config.js</b> وحط <b>supabaseUrl</b> و<b>supabaseAnonKey</b> من Supabase، وبعدين ارفع الموقع تاني. الخطوات كلها في ملف «خطوات_التشغيل».</p>
+  </section>
+
+  <section id="app" hidden>
+    <div class="kpis">
+      <div class="kpi"><small>طلبات النهارده</small><b id="k-today">0</b></div>
+      <div class="kpi"><small>مستني تأكيد</small><b id="k-new">0</b></div>
+      <div class="kpi"><small>نسبة التسليم</small><b id="k-rate">—</b></div>
+      <div class="kpi"><small>مبيعات اتسلمت (الشهر ده)</small><b id="k-rev">0</b></div>
+      <div class="kpi"><small>طلبات الشهر ده</small><b id="k-month">0</b></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="tools">
+      <input id="q" placeholder="بحث بالاسم أو الموبايل أو رقم الطلب">
+      <select id="cc"><option value="">كل الدول</option><option value="EG">🇪🇬 مصر</option><option value="SA">🇸🇦 السعودية</option></select>
+      <select id="range"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يوم</option><option value="90">آخر 90 يوم</option><option value="3650">الكل</option></select>
+      <button class="btn btn-ghost" id="csv">⬇ تصدير للشحن (Excel/CSV)</button>
+    </div>
+    <div id="list"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  const S = window.STORE, $ = q => document.querySelector(q);
+  const STATUS = { new:"جديد", confirmed:"متأكد", shipped:"اتشحن", delivered:"اتسلم", returned:"مرتجع", cancelled:"ملغي" };
+  const CUR = { EGP:"ج", SAR:"ر.س" };
+  const money = (n, c = "EGP") => Number(n||0).toLocaleString("en-US") + " " + (CUR[c] || c);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  $("#title").textContent = "لوحة التحكم — " + S.name;
+
+  if (!S.supabaseUrl || !S.supabaseAnonKey) { $("#setup").hidden = false; return; }
+  const linkType = (location.hash.match(/type=(invite|recovery|signup|magiclink)/) || [])[1];
+  const sb = supabase.createClient(S.supabaseUrl, S.supabaseAnonKey);
+
+  let orders = [], leads = [], tab = "new";
+  const FLAG = { refuser:"⛔ رفض طلبين قبل كده", duplicate:"⚠ عنده طلب مفتوح" };
+
+  async function boot(){
+    const { data:{ session } } = await sb.auth.getSession();
+    if (session && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
+    if (!session) { $("#loginbox").hidden = false; return; }
+    $("#app").hidden = false; $("#logout").hidden = false; $("#refresh").hidden = false;
+    await load();
+    setInterval(load, 60000);
+  }
+
+  $("#loginform").onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target, m = $("#loginmsg"); m.classList.remove("show");
+    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+    if (error) { m.textContent = "الإيميل أو كلمة السر غلط."; m.classList.add("show"); return; }
+    location.reload();
+  };
+  $("#pwform").onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target, m = $("#pwmsg"); m.classList.remove("show");
+    if (f.p1.value !== f.p2.value) { m.textContent = "الكلمتين مش زي بعض."; m.classList.add("show"); return; }
+    const { error } = await sb.auth.updateUser({ password: f.p1.value });
+    if (error) { m.textContent = "مقدرتش أحفظ: " + error.message; m.classList.add("show"); return; }
+    location.reload();
+  };
+  $("#forgot").onclick = async e => {
+    e.preventDefault();
+    const email = $("#loginform").email.value.trim(), m = $("#loginmsg");
+    if (!email) { m.textContent = "اكتب إيميلك فوق الأول."; m.classList.add("show"); return; }
+    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    m.style.background = "#e7f2ee"; m.style.color = "var(--brand)";
+    m.textContent = "لو الإيميل ده مسجل، هيوصلك لينك تختار منه كلمة السر. شوف الـ Inbox والـ Spam."; m.classList.add("show");
+  };
+  $("#logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  $("#refresh").onclick = load;
+  $("#q").oninput = render;
+  $("#range").onchange = load;
+  $("#cc").onchange = () => { kpis(); render(); };
+  const view = () => orders.filter(o => !$("#cc").value || o.country === $("#cc").value);
+
+  async function load(){
+    const days = +$("#range").value;
+    const since = new Date(Date.now() - days*864e5).toISOString();
+    const { data, error } = await sb.from("orders").select("*").gte("created_at", since).order("created_at", { ascending:false }).limit(2000);
+    if (error) { $("#list").innerHTML = `<div class="empty">مش قادر أجيب الطلبات: ${esc(error.message)}<br>اتأكد إن إيميلك متضاف في جدول admins.</div>`; return; }
+    orders = data || [];
+    const lr = await sb.from("leads").select("*").eq("converted", false).gte("created_at", since).order("created_at", { ascending:false }).limit(500);
+    leads = lr.data || [];
+    kpis(); render();
+  }
+
+  function kpis(){
+    const today = new Date().toDateString(), mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0);
+    const V = view(), month = V.filter(o => new Date(o.created_at) >= mStart);
+    $("#k-today").textContent = V.filter(o => new Date(o.created_at).toDateString() === today).length;
+    $("#k-new").textContent = V.filter(o => o.status === "new").length;
+    const del = V.filter(o => o.status === "delivered").length, ret = V.filter(o => o.status === "returned").length;
+    $("#k-rate").textContent = (del + ret) ? Math.round(del / (del + ret) * 100) + "%" : "—";
+    const rev = {}; month.filter(o => o.status === "delivered").forEach(o => rev[o.currency] = (rev[o.currency]||0) + o.total);
+    $("#k-rev").textContent = Object.keys(rev).length ? Object.entries(rev).map(([c,v]) => money(v,c)).join(" + ") : "0";
+    $("#k-month").textContent = month.length;
+  }
+
+  function render(){
+    const V = view();
+    const counts = {}; V.forEach(o => counts[o.status] = (counts[o.status]||0) + 1);
+    $("#tabs").innerHTML = [["all","الكل",V.length], ...Object.entries(STATUS).map(([k,v]) => [k,v,counts[k]||0])]
+      .map(([k,v,c]) => `<button class="tab ${tab===k?"on":""}" data-t="${k}">${v}<i>${c}</i></button>`).join("")
+      + `<button class="tab ${tab==="leads"?"on":""}" data-t="leads">📝 فورمات ناقصة<i>${leadsView().length}</i></button>`;
+    document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
+
+    const q = $("#q").value.trim();
+    if (tab === "leads") { renderLeads(q); return; }
+    const phoneCount = {}; orders.forEach(o => phoneCount[o.phone] = (phoneCount[o.phone]||0) + 1);
+    const rows = V.filter(o => (tab === "all" || o.status === tab) &&
+      (!q || [o.customer_name, o.phone, o.order_no].some(x => String(x||"").includes(q))));
+    if (!rows.length) { $("#list").innerHTML = `<div class="empty">مفيش طلبات هنا.</div>`; return; }
+
+    $("#list").innerHTML = rows.map(o => {
+      const d = new Date(o.created_at);
+      const waMsg = `أهلاً ${o.customer_name} 👋\nمعاك ${S.name}. بنأكد طلبك رقم ${o.order_no}:\n${o.product_name} × ${o.qty}\nالإجمالي ${o.total} ${CUR[o.currency]||""} (الدفع عند الاستلام)${o.addon_name ? "\n+ " + o.addon_name : ""}\nالعنوان: ${o.governorate} - ${o.city} - ${o.address}\nلو البيانات مظبوطة رد بـ «تمام» ونشحنلك على طول.`;
+      const intl = o.country === "SA" ? "966" + o.phone.slice(1) : "2" + o.phone;
+      return `<div class="ord" data-id="${o.id}">
+        <div>
+          <div class="no">${o.country === "SA" ? "🇸🇦" : "🇪🇬"} ${esc(o.order_no)} <span class="st st-${o.status}">${STATUS[o.status]}</span> ${(o.flags||[]).map(f => `<span class="dup">${FLAG[f]||f}</span>`).join(" ")} ${phoneCount[o.phone] > 1 && !(o.flags||[]).includes("duplicate") ? `<span class="dup">⚠ ${phoneCount[o.phone]} طلبات من نفس الرقم</span>` : ""}</div>
+          <div>${esc(o.product_name)} × ${o.qty}${o.addon_name ? ` <span class="meta">+ ${esc(o.addon_name)}</span>` : ""} — <b>${money(o.total, o.currency)}</b></div>
+          <div class="meta">${d.toLocaleDateString("ar-EG")} ${d.toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"})} • المصدر: ${esc(o.source||"-")}</div>
+        </div>
+        <div>
+          <div><b>${esc(o.customer_name)}</b> — <span dir="ltr">${esc(o.phone)}</span></div>
+          <div class="meta">${esc(o.governorate)} • ${esc(o.city)} • ${esc(o.address)}</div>
+          ${o.landmark ? `<div class="meta">📍 ${esc(o.landmark)}</div>` : ""}
+          ${o.notes ? `<div class="meta">📝 ${esc(o.notes)}</div>` : ""}
+          <input class="note" placeholder="ملاحظة داخلية…" value="${esc(o.admin_note||"")}">
+        </div>
+        <div class="acts">
+          <a class="wa" href="https://wa.me/${intl}?text=${encodeURIComponent(waMsg)}" target="_blank" rel="noopener">واتساب تأكيد</a>
+          <a href="tel:${esc(o.phone)}">اتصال</a>
+          <select class="stsel">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${k===o.status?"selected":""}>${v}</option>`).join("")}</select>
+        </div>
+      </div>`;
+    }).join("");
+
+    document.querySelectorAll(".ord").forEach(el => {
+      const id = +el.dataset.id;
+      el.querySelector(".stsel").onchange = e => save(id, { status: e.target.value });
+      el.querySelector(".note").onchange = e => save(id, { admin_note: e.target.value });
+    });
+  }
+
+  function leadsView(){ return leads.filter(l => !$("#cc").value || l.country === $("#cc").value); }
+  function renderLeads(q){
+    const rows = leadsView().filter(l => !q || [l.name, l.phone].some(x => String(x||"").includes(q)));
+    if (!rows.length) { $("#list").innerHTML = `<div class="empty">مفيش فورمات ناقصة. 👌</div>`; return; }
+    $("#list").innerHTML = `<p class="meta" style="margin:0 0 8px">ناس كتبوا رقمهم ومكمّلوش الطلب. ابعتلهم رسالة واحدة بس — متزنّش.</p>` + rows.map(l => {
+      const p = S.products.find(x => x.id === l.product_id);
+      const intl = l.country === "SA" ? "966" + l.phone.slice(1) : "2" + l.phone;
+      const msg = `أهلاً${l.name ? " " + l.name : ""} 👋 معاك ${S.name}. لاحظنا إنك كنت بتطلب ${p ? p.name : "منتج"} ومكمّلتش. لو عندك أي سؤال أو حابب نكمّل الطلب معاك هنا، إحنا موجودين.`;
+      const d = new Date(l.created_at);
+      return `<div class="ord" style="grid-template-columns:1.3fr 1fr auto"><div><b>${esc(l.name||"بدون اسم")}</b> — <span dir="ltr">${esc(l.phone)}</span><div class="meta">${p ? esc(p.name) : esc(l.product_id||"")} • ${d.toLocaleDateString("ar-EG")} ${d.toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"})} • ${esc(l.source||"-")}</div></div><div></div>
+        <div class="acts"><a class="wa" href="https://wa.me/${intl}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">واتساب متابعة</a><a href="#" data-lead="${l.id}">تم ✓</a></div></div>`;
+    }).join("");
+    document.querySelectorAll("[data-lead]").forEach(a => a.onclick = async e => {
+      e.preventDefault(); const id = +a.dataset.lead;
+      await sb.from("leads").update({ converted: true }).eq("id", id);
+      leads = leads.filter(x => x.id !== id); render();
+    });
+  }
+
+  async function save(id, patch){
+    const { error } = await sb.from("orders").update(patch).eq("id", id);
+    if (error) { alert("مقدرتش أحفظ: " + error.message); return; }
+    const o = orders.find(x => x.id === id); Object.assign(o, patch);
+    kpis(); render();
+  }
+
+  // تصدير الطلبات المتأكدة (أو التاب الحالي) لملف CSV يفتح في Excel — للرفع على بوسطة
+  $("#csv").onclick = () => {
+    const list = view().filter(o => tab === "all" ? true : o.status === tab);
+    if (!list.length) { alert("مفيش طلبات في التاب ده."); return; }
+    if (tab === "leads") { alert("التصدير للطلبات بس."); return; }
+    const head = ["الدولة","العملة","رقم الطلب","اسم العميل","الموبايل","المحافظة","المدينة","العنوان","علامة مميزة","المنتج","الكمية","مبلغ التحصيل","ملاحظات","الحالة","التاريخ"];
+    const cell = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
+    const lines = [head.map(cell).join(",")].concat(list.map(o => [o.country,o.currency,o.order_no,o.customer_name,o.phone,o.governorate,o.city,o.address,o.landmark,o.product_name + (o.addon_name ? " + " + o.addon_name : ""),o.qty,o.total,o.notes,STATUS[o.status],new Date(o.created_at).toLocaleDateString("en-GB")].map(cell).join(",")));
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type:"text/csv;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `orders-${tab}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  };
+
+  boot();
+})();
+</script>
+</body>
+</html>
