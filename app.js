@@ -45,7 +45,7 @@
     clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>'
   };
   const TAG = (cls = "") => `<span class="tag ${cls}" aria-hidden="true"><b>OPS'S</b><i>STORE</i></span>`;
-  const perks = () => `<span>${SVG.cash}الدفع عند الاستلام</span><span>${SVG.truck}${CC === "SA" ? "شحن مجاني لكل المناطق" : "شحن مجاني لكل المحافظات"}</span><span>${SVG.swap}استبدال خلال 14 يوم</span>`;
+  const perks = () => `<span>${SVG.cash}الدفع عند الاستلام</span><span>${SVG.truck}${CC === "SA" ? "شحن مجاني لكل المناطق" : "شحن مجاني لكل المحافظات"}</span><span>${SVG.swap}استبدال خلال 7 أيام</span>`;
 
   // ---------- الدولة ----------
   const CC = (() => {
@@ -66,11 +66,34 @@
     ? `<img src="${p.images[0]}" alt="${p.name}" class="${cls}" loading="lazy">`
     : (ICONS[p.icon] || "");
   const chips = p => (p.specs || []).map(x => `<span class="chip">${x}</span>`).join("");
-  // تقدير مدة التوصيل حسب المحافظة/المنطقة (من config.js)
-  const etaFor = region => {
-    const e = (S.eta || {})[CC]; if (!e) return S.deliveryDays;
-    return (e.fast || []).includes(region) ? e.fastText : e.text;
+  // ---------- مواعيد التوصيل (تواريخ حقيقية) ----------
+  const DAYS = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+  const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+  const etaRange = region => {
+    const e = (S.eta || {})[CC]; if (!e) return null;
+    const g = (e.groups || []).find(x => x.regions.includes(region)) || e.other;
+    const off = e.offDays || [5];
+    // الوقت المحلي للدولة (مصر +2/+3، السعودية +3) — تقريبي كفاية للعرض
+    const now = new Date(Date.now() + ((CC === "SA" ? 3 : 2) * 60 + new Date().getTimezoneOffset()) * 60000);
+    const d = new Date(now); if (now.getHours() >= (e.cutoffHour || 15)) d.setDate(d.getDate() + 1);
+    while (off.includes(d.getDay())) d.setDate(d.getDate() + 1);
+    const add = n => { const x = new Date(d); let k = 0; while (k < n) { x.setDate(x.getDate() + 1); if (!off.includes(x.getDay())) k++; } return x; };
+    return [add(g.min), add(g.max)];
   };
+  const fmtDay = (x, withMonth = true) => DAYS[x.getDay()] + " " + x.getDate().toLocaleString("ar-EG") + (withMonth ? " " + MONTHS[x.getMonth()] : "");
+  const etaText = region => {
+    const r = etaRange(region); if (!r) return S.deliveryDays;
+    const [a, b] = r;
+    if (a.toDateString() === b.toDateString()) return fmtDay(a);
+    return "بين " + fmtDay(a, a.getMonth() !== b.getMonth()) + " و" + fmtDay(b);
+  };
+  const etaFor = etaText;
+  const etaDays = region => {
+    const e = (S.eta || {})[CC]; if (!e) return S.deliveryDays;
+    const g = (e.groups || []).find(x => x.regions.includes(region)) || e.other;
+    return g.min === g.max ? "خلال " + g.min.toLocaleString("ar-EG") + " أيام عمل" : "من " + g.min.toLocaleString("ar-EG") + " لـ " + g.max.toLocaleString("ar-EG") + " أيام عمل";
+  };
+  const CTA = () => CC === "SA" ? "اطلب الحين" : "اطلب دلوقتي";
 
   // ---------- مصدر الزيارة (للإعلانات) ----------
   try {
@@ -133,7 +156,7 @@
         <div class="body">
           <h3>${p.name}</h3><div class="sub">${p.subtitle}</div>
           <div class="chips">${chips(p)}</div>
-          <div class="buy"><span class="price">${money(priceOf(p))}${p.oldPrice && CC === "EG" ? `<s>${money(p.oldPrice)}</s>` : ""}</span><span class="btn btn-primary">اطلب دلوقتي</span></div>
+          <div class="buy"><span class="price">${money(priceOf(p))}<small>شامل الشحن</small></span><span class="btn btn-primary">${CTA()}</span></div>
         </div>
       </a>`).join("");
   }
@@ -149,32 +172,48 @@
       $("#order").remove(); $("#buybar").remove(); return;
     }
     const imgs = p.images || [];
+    const offers = (p.offers && p.offers[CC]) || {};
+    const o2 = offers[2], save2 = o2 ? priceOf(p) * 2 - o2 : 0;
     $("#pp").innerHTML = `
       <div class="gallery">
-        <div class="mat" id="mainimg">${media(p)}</div>
-        ${imgs.length > 1 ? `<div class="thumbs">${imgs.map((s, i) => `<img src="${s}" data-i="${i}" class="${i ? "" : "on"}" alt="">`).join("")}</div>` : ""}
+        <div class="mat" id="mainimg">${media(p)}${imgs.length > 1 ? `<span class="count" id="imgcount">١ / ${imgs.length.toLocaleString("ar-EG")}</span>` : ""}</div>
+        ${imgs.length > 1 ? `<div class="thumbs">${imgs.map((s, i) => `<img src="${s}" data-i="${i}" class="${i ? "" : "on"}" alt="${p.name} — صورة ${i + 1}" loading="lazy">`).join("")}</div>` : ""}
       </div>
       <div class="pinfo">
         <h1>${p.name}</h1><div class="sub">${p.subtitle}</div>
         <div class="chips">${chips(p)}</div>
-        <div class="pricebox"><span class="price">${money(priceOf(p))}${p.oldPrice && CC === "EG" ? `<s>${money(p.oldPrice)}</s>` : ""}</span><span class="cod-note">${SVG.cash} تدفع لما تستلم • شحن مجاني</span></div>
+        <div class="pricebox"><span class="price">${money(priceOf(p))}</span><span class="cod-note">${SVG.cash} شامل الشحن • تدفع لما تستلم</span>
+          ${save2 > 0 ? `<span class="deal">لو طلبت قطعتين: ${money(o2)} بدل ${money(priceOf(p) * 2)}</span>` : ""}</div>
+        <div class="eta-line">${SVG.truck}<span>اطلب النهارده ويوصلك غالبًا <b id="eta-top">${etaText((S.eta[CC].groups[0] || {}).regions?.[0])}</b> <small>(${CC === "SA" ? "الرياض" : "القاهرة والجيزة"} — اختار منطقتك تحت للتاريخ بالظبط)</small></span></div>
         <ul class="bullets">${p.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
-        ${p.honest ? `<div class="honest">${p.honest}</div>` : ""}
-        <a href="#order" class="btn btn-primary btn-full">اطلب دلوقتي</a>
+        <a href="#order" class="btn btn-primary btn-full">${CTA()}</a>
         <div class="perks">${perks()}</div>
       </div>`;
     $("#extra").innerHTML = `
+      ${p.highlights ? `<section class="hl" aria-label="أهم المميزات">${p.highlights.map(([t, d], i) => `<div><span class="n">${(i + 1).toLocaleString("ar-EG")}</span><h3>${t}</h3><p>${d}</p></div>`).join("")}</section>` : ""}
+      ${p.honest ? `<div class="honest">${p.honest}</div>` : ""}
       <div class="duo">
-        <div class="panel"><h2>في العلبة</h2><ul class="inbox">${p.inBox.map(x => `<li>${x}</li>`).join("")}</ul></div>
-        <div class="panel faq"><h2>أسئلة عن المنتج</h2>${p.faq.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join("")}</div>
-      </div>`;
+        <div class="panel"><h2>المواصفات</h2>${p.specTable ? `<table class="spect">${p.specTable.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>` : ""}
+          <h3 class="inbox-h">في العلبة</h3><ul class="inbox">${p.inBox.map(x => `<li>${x}</li>`).join("")}</ul></div>
+        <div class="panel faq"><h2>أسئلة عن المنتج</h2>${p.faq.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join("")}
+          <details><summary>هدفع إمتى؟</summary><p>لما المندوب يسلّمك الطلب. مفيش أي دفع أونلاين، والشحن مجاني.</p></details>
+          <details><summary>لو المنتج مش زي الوصف؟</summary><p>${S.returnPolicy}</p></details></div>
+      </div>
+      <ol class="steps mini" aria-label="إزاي بتطلب">
+        <li><h3>اطلب</h3><p>اكتب اسمك وعنوانك تحت. مش هتدفع حاجة دلوقتي.</p></li>
+        <li><h3>هنكلمك نأكد</h3><p>مكالمة قصيرة نتأكد فيها من الطلب والعنوان.</p></li>
+        <li><h3>استلم وادفع</h3><p>المندوب بيوصلك، تشوف المنتج، وتدفع كاش.</p></li>
+      </ol>`;
     document.querySelectorAll(".thumbs img").forEach(t => t.onclick = () => {
       document.querySelectorAll(".thumbs img").forEach(x => x.classList.remove("on")); t.classList.add("on");
-      $("#mainimg").innerHTML = `<img src="${t.src}" alt="">`;
+      $("#mainimg").querySelector("img").src = t.src;
+      const c = $("#imgcount"); if (c) c.textContent = (+t.dataset.i + 1).toLocaleString("ar-EG") + " / " + imgs.length.toLocaleString("ar-EG");
     });
     setupForm(p);
     const bar = $("#buybar");
     bar.querySelector(".bb-price").textContent = money(priceOf(p));
+    bar.querySelector(".btn").textContent = CTA();
+    $(".order-head h2").textContent = CTA();
     const io = new IntersectionObserver(([e]) => bar.classList.toggle("on", !e.isIntersecting && window.scrollY > 300));
     io.observe($("#order"));
     window.addEventListener("scroll", () => { if (window.scrollY < 300) bar.classList.remove("on"); }, { passive: true });
@@ -208,7 +247,7 @@
     if ($("#bumpcb")) $("#bumpcb").onchange = e => { withAddon = e.target.checked; upd(); };
     upd();
     const etaBox = $("#eta");
-    const showEta = () => { if (etaBox) etaBox.innerHTML = `${SVG.clock}<span>التوصيل المتوقع: <b>${etaFor(f.elements.gov.value)}</b> من تأكيد الطلب</span>`; };
+    const showEta = () => { if (etaBox) etaBox.innerHTML = `${SVG.clock}<span>${f.elements.gov.value ? `يوصلك غالبًا <b>${etaFor(f.elements.gov.value)}</b>` : `اختار ${C.regionLabel} عشان نقولك يوصل إمتى`}</span>`; };
     f.elements.gov.addEventListener("change", showEta); showEta();
     // حفظ الرقم لو العميل كتبه ومكمّلش
     let leadSent = "";
@@ -324,7 +363,7 @@
           <p style="margin:0 0 16px;color:var(--muted)">${o.product_name} × ${o.qty}${o.addon_name ? " + " + o.addon_name : ""} — ${Number(o.total).toLocaleString("ar-EG")} ${cur}</p>
           ${special ? `<div class="honest">${special} لو فيه حاجة غلط كلمنا على واتساب.</div>` :
           `<ol class="track">${STEPS.map((s, i) => `<li class="${i <= idx ? "done" : ""}${i === idx ? " now" : ""}">${s[1]}</li>`).join("")}</ol>
-           <p style="margin:14px 0 0;color:var(--muted);font-size:14px">${o.status === "delivered" ? "اتسلم. نتمنى المنتج يعجبك!" : "التوصيل المتوقع: " + etaFor(o.governorate) + " من تأكيد الطلب."}</p>`}
+           <p style="margin:14px 0 0;color:var(--muted);font-size:14px">${o.status === "delivered" ? "اتسلم. نتمنى المنتج يعجبك!" : "التوصيل عادةً " + etaDays(o.governorate) + " من تأكيد الطلب."}</p>`}
           <p style="margin:16px 0 0"><a class="btn btn-ghost btn-full" href="${waLink("السلام عليكم، بسأل عن طلبي رقم " + o.order_no)}" target="_blank" rel="noopener">اسأل عن الطلب على واتساب</a></p></div>`;
       } catch (err) { m.textContent = "حصلت مشكلة. جرب تاني."; m.classList.add("show","error"); }
       finally { btn.disabled = false; }
