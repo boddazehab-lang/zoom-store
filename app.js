@@ -8,35 +8,33 @@
   // رسومات المنتجات لحد ما الصور الحقيقية تجهز
   const ICONS = {
     monocular: `<svg viewBox="0 0 240 240" aria-hidden="true"><defs>
-      <linearGradient id="mb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3A50"/><stop offset=".5" stop-color="#0F1E33"/><stop offset="1" stop-color="#1A2A42"/></linearGradient>
-      <linearGradient id="mr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E2B866"/><stop offset="1" stop-color="#9E6F1F"/></linearGradient>
-      <radialGradient id="mg" cx=".38" cy=".35" r=".7"><stop offset="0" stop-color="#BFE3E7"/><stop offset=".55" stop-color="#1C6E7A"/><stop offset="1" stop-color="#0B3940"/></radialGradient></defs>
-      <ellipse cx="120" cy="196" rx="70" ry="7" fill="#0F1E33" opacity=".12"/>
-      <g transform="rotate(-14 120 110)">
-        <rect x="46" y="86" width="120" height="50" rx="20" fill="url(#mb)"/>
-        <g stroke="#3C4D66" stroke-width="2.4" opacity=".9"><path d="M78 88v46M86 88v46M94 88v46M102 88v46M110 88v46"/></g>
-        <rect x="160" y="76" width="36" height="70" rx="16" fill="url(#mb)"/>
-        <rect x="157" y="78" width="7" height="66" rx="3" fill="url(#mr)"/>
-        <ellipse cx="194" cy="111" rx="12" ry="31" fill="url(#mg)"/>
-        <ellipse cx="190" cy="100" rx="3" ry="8" fill="#fff" opacity=".7"/>
-        <rect x="26" y="96" width="26" height="30" rx="10" fill="#1A2A42"/>
-        <rect x="47" y="93" width="6" height="36" rx="3" fill="url(#mr)"/>
+      <linearGradient id="mb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A524E"/><stop offset=".45" stop-color="#1E2522"/><stop offset="1" stop-color="#2C3430"/></linearGradient>
+      <linearGradient id="mr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F08A4B"/><stop offset="1" stop-color="#B8440F"/></linearGradient>
+      <radialGradient id="mg" cx=".38" cy=".35" r=".75"><stop offset="0" stop-color="#E4F1F3"/><stop offset=".5" stop-color="#5D8C93"/><stop offset="1" stop-color="#173238"/></radialGradient></defs>
+      <g transform="rotate(-14 120 112)">
+        <rect x="46" y="88" width="120" height="50" rx="20" fill="url(#mb)"/>
+        <g stroke="#5B645F" stroke-width="2.4"><path d="M78 90v46M86 90v46M94 90v46M102 90v46M110 90v46"/></g>
+        <rect x="160" y="78" width="36" height="70" rx="16" fill="url(#mb)"/>
+        <rect x="156" y="80" width="8" height="66" rx="3" fill="url(#mr)"/>
+        <ellipse cx="194" cy="113" rx="12" ry="31" fill="url(#mg)"/>
+        <ellipse cx="190" cy="102" rx="3" ry="8" fill="#fff" opacity=".75"/>
+        <rect x="26" y="98" width="26" height="30" rx="10" fill="#2C3430"/>
+        <rect x="47" y="95" width="6" height="36" rx="3" fill="url(#mr)"/>
       </g>
-      <path d="M112 142v34M112 176l-26 18M112 176l26 18M112 176v20" stroke="#2B3A50" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M112 144v34M112 178l-26 18M112 178l26 18M112 178v20" stroke="#D7DCD6" stroke-width="5" stroke-linecap="round" fill="none"/>
     </svg>`,
     endoscope: `<svg viewBox="0 0 240 240" aria-hidden="true"><defs>
-      <linearGradient id="ep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3A50"/><stop offset="1" stop-color="#0F1E33"/></linearGradient>
-      <linearGradient id="es" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F8C99"/><stop offset="1" stop-color="#0B3940"/></linearGradient></defs>
-      <ellipse cx="120" cy="204" rx="78" ry="7" fill="#0F1E33" opacity=".12"/>
-      <rect x="40" y="38" width="76" height="146" rx="16" fill="url(#ep)"/>
-      <rect x="47" y="50" width="62" height="118" rx="8" fill="url(#es)"/>
-      <circle cx="78" cy="109" r="26" fill="none" stroke="#BFE3E7" stroke-width="2" opacity=".7"/>
-      <path d="M78 95v28M64 109h28" stroke="#BFE3E7" stroke-width="2" opacity=".7"/>
-      <rect x="70" y="176" width="16" height="4" rx="2" fill="#5E6B7D"/>
-      <path d="M78 184c0 14 10 18 26 18 30 0 40-26 66-26 22 0 30 14 22 30" fill="none" stroke="#C08A2E" stroke-width="6" stroke-linecap="round"/>
-      <path d="M140 30c-10 22 10 34 30 40s34 22 20 44" fill="none" stroke="#C08A2E" stroke-width="6" stroke-linecap="round"/>
-      <rect x="180" y="110" width="20" height="30" rx="6" fill="#0F1E33" transform="rotate(12 190 125)"/>
-      <circle cx="192" cy="142" r="6" fill="#F7E3B5"/><circle cx="192" cy="142" r="11" fill="#F7E3B5" opacity=".35"/>
+      <linearGradient id="ep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A524E"/><stop offset="1" stop-color="#1E2522"/></linearGradient>
+      <linearGradient id="es" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6E9FA6"/><stop offset="1" stop-color="#173238"/></linearGradient></defs>
+      <rect x="40" y="36" width="76" height="148" rx="16" fill="url(#ep)"/>
+      <rect x="47" y="48" width="62" height="120" rx="8" fill="url(#es)"/>
+      <circle cx="78" cy="108" r="24" fill="none" stroke="#E4F1F3" stroke-width="2" opacity=".75"/>
+      <path d="M78 95v26M65 108h26" stroke="#E4F1F3" stroke-width="2" opacity=".75"/>
+      <rect x="70" y="175" width="16" height="4" rx="2" fill="#8A938E"/>
+      <path d="M78 184c0 14 10 18 26 18 30 0 40-26 66-26 22 0 30 14 22 30" fill="none" stroke="#F08A4B" stroke-width="6" stroke-linecap="round"/>
+      <path d="M140 30c-10 22 10 34 30 40s34 22 20 44" fill="none" stroke="#F08A4B" stroke-width="6" stroke-linecap="round"/>
+      <rect x="180" y="110" width="20" height="30" rx="6" fill="#1E2522" transform="rotate(12 190 125)"/>
+      <circle cx="192" cy="142" r="6" fill="#FFF1D6"/><circle cx="192" cy="142" r="12" fill="#FFF1D6" opacity=".3"/>
     </svg>`
   };
   const SVG = {
@@ -44,8 +42,9 @@
     truck: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 9.5h4l3 3.5V16h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>',
     swap: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
     chat: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18.5l1.2-3.6A7.5 7.5 0 1 1 8.6 18z"/></svg>',
-    logo: '<svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#0F1E33"/><circle cx="16" cy="16" r="9" fill="none" stroke="#C08A2E" stroke-width="2.4"/><circle cx="16" cy="16" r="4" fill="#1C6E7A"/><circle cx="13.6" cy="13.6" r="1.4" fill="#fff" opacity=".8"/></svg>'
+    clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>'
   };
+  const TAG = (cls = "") => `<span class="tag ${cls}" aria-hidden="true"><b>OPS'S</b><i>STORE</i></span>`;
   const perks = () => `<span>${SVG.cash}الدفع عند الاستلام</span><span>${SVG.truck}${CC === "SA" ? "شحن مجاني لكل المناطق" : "شحن مجاني لكل المحافظات"}</span><span>${SVG.swap}استبدال خلال 14 يوم</span>`;
 
   // ---------- الدولة ----------
@@ -66,6 +65,12 @@
   const media = (p, cls = "") => p.images && p.images.length
     ? `<img src="${p.images[0]}" alt="${p.name}" class="${cls}" loading="lazy">`
     : (ICONS[p.icon] || "");
+  const chips = p => (p.specs || []).map(x => `<span class="chip">${x}</span>`).join("");
+  // تقدير مدة التوصيل حسب المحافظة/المنطقة (من config.js)
+  const etaFor = region => {
+    const e = (S.eta || {})[CC]; if (!e) return S.deliveryDays;
+    return (e.fast || []).includes(region) ? e.fastText : e.text;
+  };
 
   // ---------- مصدر الزيارة (للإعلانات) ----------
   try {
@@ -96,16 +101,19 @@
     const top = document.createElement("div");
     top.className = "topbar"; top.textContent = C.shippingNote;
     const h = document.createElement("header"); h.className = "site";
-    h.innerHTML = `<div class="wrap"><a class="logo" href="index.html">${SVG.logo}${S.name}</a>
+    h.innerHTML = `<div class="wrap"><a class="logo" href="index.html" aria-label="${S.name}">${TAG()}<span class="ar">${S.nameAr || ""}</span></a>
+      <nav class="nav" aria-label="أقسام الموقع"><a href="index.html#products">المنتجات</a><a href="index.html#how">إزاي بتطلب</a><a href="index.html#faq">أسئلة</a></nav>
       <span class="hdr-r">${Object.keys(S.countries).length > 1 ? `<select id="ccsel" aria-label="الدولة">${Object.entries(S.countries).map(([k, v]) => `<option value="${k}" ${k === CC ? "selected" : ""}>${v.flag} ${v.name}</option>`).join("")}</select>` : ""}
       <a class="wa-link" href="${waLink("السلام عليكم، عندي سؤال")}" target="_blank" rel="noopener">${SVG.chat}<span>واتساب</span></a></span></div>`;
     document.body.prepend(h); document.body.prepend(top);
     const sel = document.getElementById("ccsel");
     if (sel) sel.onchange = () => { const u = new URL(location.href); u.searchParams.set("c", sel.value.toLowerCase()); location.href = u.toString(); };
     const f = document.createElement("footer"); f.className = "site";
-    f.innerHTML = `<div class="wrap"><div><b>${S.name}</b><p>${S.tagline}</p></div>
-      <div><p>التوصيل ${S.deliveryDays} • الدفع عند الاستلام</p><p>${S.returnPolicy}</p></div>
-      <div><p><a href="${waLink("السلام عليكم")}" target="_blank" rel="noopener">كلمنا على واتساب</a></p><p>© ${new Date().getFullYear()} ${S.name}</p></div></div>`;
+    f.innerHTML = `<div class="wrap">
+      <div>${TAG("on-dark")}<p style="margin-top:12px;max-width:36ch">${S.tagline}</p></div>
+      <div><h4>الطلب والتوصيل</h4><p>التوصيل ${S.deliveryDays}</p><p>الدفع عند الاستلام</p><p>${S.returnPolicy}</p></div>
+      <div><h4>كلمنا</h4><p><a href="${waLink("السلام عليكم")}" target="_blank" rel="noopener">واتساب</a></p><p>${S.founders || ""}</p></div>
+      <div class="base"><span>© ${new Date().getFullYear()} ${S.name}</span><span>${C.flag} ${C.name}</span></div></div>`;
     document.body.append(f);
   }
 
@@ -116,14 +124,14 @@
     $("#faq-days").textContent = "عادةً " + S.deliveryDays + " من تأكيد الطلب.";
     $("#faq-return").textContent = S.returnPolicy;
     const list = S.products.filter(available);
-    $("#hero-lens").innerHTML = list.length ? media(list[0]) : ICONS.monocular;
+    $("#hero-lens").innerHTML = (list.length ? media(list[0]) : ICONS.monocular) + (list.length && list[0].specs ? `<span class="spec">${list[0].specs[0]}</span>` : "");
     if (!list.length) { $("#products").innerHTML = `<p style="color:var(--muted);text-align:center">المنتجات هتنزل في ${C.name} قريب.</p>`; return; }
     $("#products").innerHTML = list.map(p => `
-      <a class="prow" href="product.html?p=${p.id}">
-        <div class="lens">${media(p)}</div>
-        <div>
-          <h2>${p.name}</h2><div class="sub">${p.subtitle}</div>
-          <ul>${p.bullets.slice(0, 3).map(b => `<li>${b}</li>`).join("")}</ul>
+      <a class="pcard" href="product.html?p=${p.id}">
+        <div class="mat">${media(p)}</div>
+        <div class="body">
+          <h3>${p.name}</h3><div class="sub">${p.subtitle}</div>
+          <div class="chips">${chips(p)}</div>
           <div class="buy"><span class="price">${money(priceOf(p))}${p.oldPrice && CC === "EG" ? `<s>${money(p.oldPrice)}</s>` : ""}</span><span class="btn btn-primary">اطلب دلوقتي</span></div>
         </div>
       </a>`).join("");
@@ -142,13 +150,13 @@
     const imgs = p.images || [];
     $("#pp").innerHTML = `
       <div class="gallery">
-        <div class="lens" id="mainimg">${media(p)}</div>
+        <div class="mat" id="mainimg">${media(p)}</div>
         ${imgs.length > 1 ? `<div class="thumbs">${imgs.map((s, i) => `<img src="${s}" data-i="${i}" class="${i ? "" : "on"}" alt="">`).join("")}</div>` : ""}
       </div>
       <div class="pinfo">
         <h1>${p.name}</h1><div class="sub">${p.subtitle}</div>
-        <div class="price">${money(priceOf(p))}${p.oldPrice && CC === "EG" ? `<s>${money(p.oldPrice)}</s>` : ""}</div>
-        <div class="cod-note">${SVG.cash} تدفع لما تستلم — الشحن مجاني</div>
+        <div class="chips">${chips(p)}</div>
+        <div class="pricebox"><span class="price">${money(priceOf(p))}${p.oldPrice && CC === "EG" ? `<s>${money(p.oldPrice)}</s>` : ""}</span><span class="cod-note">${SVG.cash} تدفع لما تستلم • شحن مجاني</span></div>
         <ul class="bullets">${p.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
         ${p.honest ? `<div class="honest">${p.honest}</div>` : ""}
         <a href="#order" class="btn btn-primary btn-full">اطلب دلوقتي</a>
@@ -198,6 +206,9 @@
     document.querySelectorAll("input[name=qtyopt]").forEach(r => r.onchange = () => { qty = +r.value; upd(); });
     if ($("#bumpcb")) $("#bumpcb").onchange = e => { withAddon = e.target.checked; upd(); };
     upd();
+    const etaBox = $("#eta");
+    const showEta = () => { if (etaBox) etaBox.innerHTML = `${SVG.clock}<span>التوصيل المتوقع: <b>${etaFor(f.elements.gov.value)}</b> من تأكيد الطلب</span>`; };
+    f.elements.gov.addEventListener("change", showEta); showEta();
     // حفظ الرقم لو العميل كتبه ومكمّلش
     let leadSent = "";
     f.elements.phone.addEventListener("blur", () => {
