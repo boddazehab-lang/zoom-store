@@ -51,7 +51,7 @@ header.site .wrap{display:flex;align-items:center;gap:22px;height:68px}
 .nav a{text-decoration:none;color:var(--olive-2)}
 .nav a:hover{color:var(--orange)}
 .hdr-r{display:flex;align-items:center;gap:8px;margin-inline-start:auto}
-#ccsel{font:inherit;font-size:14px;padding:8px 10px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:#fff;color:var(--ink)}
+#ccsel{font:inherit;font-size:16px;padding:8px 10px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:#fff;color:var(--ink)}
 .wa-link{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;font-size:14px;color:var(--olive);padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--olive)}
 .wa-link:hover{background:var(--olive);color:#fff}
 @media (max-width:860px){.nav{display:none}.logo .ar{display:none}}

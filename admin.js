@@ -18,9 +18,13 @@
   const toast = msg => { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2600); };
   const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} } };
 
-  $("#title").textContent = "لوحة التحكم — " + S.name;
+  const setTitle = () => { $("#title").textContent = innerWidth < 560 ? S.name : "لوحة التحكم — " + S.name; };
+  setTitle(); addEventListener("resize", setTitle);
   if (!S.supabaseUrl || !S.supabaseAnonKey) { $("#setup").hidden = false; return; }
-  const sb = supabase.createClient(S.supabaseUrl, S.supabaseAnonKey);
+  // «تذكرني»: لو متعلم الجلسة بتتحفظ على الجهاز، لو لأ بتتمسح أول ما المتصفح يتقفل
+  const REM = () => ls.get("ops_remember") !== "0";
+  const mk = () => supabase.createClient(S.supabaseUrl, S.supabaseAnonKey, { auth: { storage: REM() ? window.localStorage : window.sessionStorage, persistSession: true, autoRefreshToken: true } });
+  let sb = mk();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("admin-sw.js").catch(() => {});
 
   // ================= الدخول =================
@@ -31,86 +35,141 @@
   const D = { me: "", admins: [], orders: [], leads: [], products: [], offers: [], costs: [], cats: [], black: [], spend: [] };
   const F = { cc: ls.get("f_cc") || "", days: +(ls.get("f_days") || 30) };
   let section = (location.hash.match(/^#\/(\w+)/) || [])[1] || "home";
+  let started = false;
+
+  const msg = (id, text, ok) => { const m = $(id); m.textContent = text || ""; m.classList.toggle("show", !!text); m.classList.toggle("ok", !!ok); };
+  function showAuth(view) {
+    document.body.classList.add("authmode"); $("#auth").hidden = false; $("#app").hidden = true;
+    $("#loginform").hidden = view !== "login"; $("#pwform").hidden = view !== "pw"; $("#lockview").hidden = view !== "lock";
+    document.title = (view === "lock" ? "مقفول" : "دخول") + " — " + S.name;
+    if (view === "login") {
+      const f = $("#loginform"); if (!f.email.value) f.email.value = ls.get("ops_email") || ""; $("#remember").checked = REM();
+      setTimeout(() => (f.email.value ? f.password : f.email).focus(), 50);
+    }
+    if (view === "lock") $("#lockhi").textContent = "أهلاً " + (ls.get("ops_name") || "") + " 👋";
+  }
+  function hideAuth() { document.body.classList.remove("authmode"); $("#auth").hidden = true; $("#app").hidden = false; document.title = "لوحة التحكم — " + S.name; }
 
   async function boot() {
-    if (linkErr) { $("#loginbox").hidden = false; const m = $("#loginmsg"); m.textContent = "اللينك ده انتهى أو اتستخدم قبل كده. اكتب إيميلك ودوس «نسيت كلمة السر» تاني."; m.classList.add("show"); history.replaceState(null, "", location.pathname); return; }
-    if (linkToken && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
+    if (linkErr) { showAuth("login"); msg("#loginmsg", "اللينك ده انتهى أو اتستخدم قبل كده. اكتب إيميلك ودوس «نسيت كلمة السر» تاني."); history.replaceState(null, "", location.pathname); return; }
+    if (linkToken && linkType) { history.replaceState(null, "", location.pathname); showAuth("pw"); return; }
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { $("#loginbox").hidden = false; return; }
+    if (!session) { showAuth("login"); return; }
     D.me = (session.user.email || "").toLowerCase();
-    if (lockEnabled()) showLock();
-    $("#app").hidden = false; $("#logout").hidden = false; $("#refresh").hidden = false; $("#bell").hidden = false;
+    if (lockEnabled() && !sessionStorage.getItem("unlocked")) { showAuth("lock"); tryUnlock(true); return; }
+    startApp();
+  }
+  async function startApp() {
+    hideAuth();
+    if (started) return; started = true;
+    $("#logout").hidden = false; $("#refresh").hidden = false; $("#bell").hidden = false;
     bellLabel();
+    $("#view").innerHTML = `<div class="empty">بيحمّل…</div>`;
     await loadAll();
     route();
     setInterval(pollOrders, 30000);
+    if (sessionStorage.getItem("justIn")) { sessionStorage.removeItem("justIn"); setTimeout(offerBio, 900); }
   }
+
+  $("#eye").onclick = () => { const i = $("#loginform").password, on = i.type === "password"; i.type = on ? "text" : "password"; $("#eye").classList.toggle("on", on); $("#eye").setAttribute("aria-label", on ? "إخفاء كلمة السر" : "إظهار كلمة السر"); };
   $("#loginform").onsubmit = async e => {
     e.preventDefault();
-    const f = e.target, m = $("#loginmsg"); m.classList.remove("show");
-    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
-    if (error) { m.textContent = "الإيميل أو كلمة السر غلط."; m.classList.add("show"); return; }
-    sessionStorage.setItem("unlocked", "1"); location.reload();
+    const f = e.target, email = f.email.value.trim().toLowerCase(), pw = f.password.value;
+    msg("#loginmsg", "");
+    if (!/^\S+@\S+\.\S+$/.test(email)) { msg("#loginmsg", "اكتب إيميل صحيح."); f.email.focus(); return; }
+    if (!pw) { msg("#loginmsg", "اكتب كلمة السر."); f.password.focus(); return; }
+    const remember = $("#remember").checked;
+    if (remember !== REM()) { ls.set("ops_remember", remember ? "1" : "0"); sb = mk(); }
+    const btn = $("#loginbtn"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span><span>بيدخل…</span>`;
+    let res;
+    try { res = await sb.auth.signInWithPassword({ email, password: pw }); } catch (err) { res = { error: { message: "network" } }; }
+    btn.disabled = false; btn.innerHTML = `<span>دخول</span>`;
+    if (res.error) {
+      const m = String(res.error.message || "");
+      msg("#loginmsg", /invalid|credentials/i.test(m) ? "الإيميل أو كلمة السر غلط." : /network|fetch/i.test(m) ? "مفيش اتصال بالنت — جرب تاني." : /confirm/i.test(m) ? "الإيميل ده لسه متأكدش. افتح لينك الدعوة اللي على الجيميل." : "مقدرتش أدخلك: " + m);
+      f.password.select(); return;
+    }
+    ls.set("ops_email", email); D.me = email;
+    sessionStorage.setItem("unlocked", "1"); sessionStorage.setItem("justIn", "1");
+    f.password.value = "";
+    startApp();
   };
   $("#pwform").onsubmit = async e => {
     e.preventDefault();
-    const f = e.target, m = $("#pwmsg"); m.classList.remove("show");
-    if (f.p1.value !== f.p2.value) { m.textContent = "الكلمتين مش زي بعض."; m.classList.add("show"); return; }
+    const f = e.target; msg("#pwmsg", "");
+    if (f.p1.value.length < 10) { msg("#pwmsg", "كلمة السر لازم تبقى 10 حروف على الأقل."); return; }
+    if (f.p1.value !== f.p2.value) { msg("#pwmsg", "الكلمتين مش زي بعض."); return; }
     const btn = f.querySelector("button"); btn.disabled = true;
-    let ok = false, msg = "";
+    let ok = false, m = "";
     if (linkToken) {
       const r = await fetch(S.supabaseUrl.replace(/\/$/, "") + "/auth/v1/user", { method: "PUT",
         headers: { "Content-Type": "application/json", apikey: S.supabaseAnonKey, Authorization: "Bearer " + linkToken }, body: JSON.stringify({ password: f.p1.value }) });
-      ok = r.ok; if (!ok) { const j = await r.json().catch(() => ({})); msg = j.msg || j.message || j.error_description || r.status; }
-      if (ok && linkRefresh) { try { await sb.auth.setSession({ access_token: linkToken, refresh_token: linkRefresh }); } catch (e) {} }
-    } else { const { error } = await sb.auth.updateUser({ password: f.p1.value }); ok = !error; msg = error && error.message; }
+      ok = r.ok; if (!ok) { const j = await r.json().catch(() => ({})); m = j.msg || j.message || j.error_description || r.status; }
+      if (ok && linkRefresh) { try { await sb.auth.setSession({ access_token: linkToken, refresh_token: linkRefresh }); } catch (err) {} }
+    } else { const { error } = await sb.auth.updateUser({ password: f.p1.value }); ok = !error; m = error && error.message; }
     btn.disabled = false;
-    if (!ok) { m.textContent = "مقدرتش أحفظ: " + msg + " — اطلب لينك جديد من «نسيت كلمة السر»."; m.classList.add("show"); return; }
+    if (!ok) { msg("#pwmsg", "مقدرتش أحفظ: " + m + " — اطلب لينك جديد من «نسيت كلمة السر»."); return; }
+    sessionStorage.setItem("unlocked", "1"); sessionStorage.setItem("justIn", "1");
     location.replace(location.pathname);
   };
   $("#forgot").onclick = async e => {
     e.preventDefault();
-    const email = $("#loginform").email.value.trim(), m = $("#loginmsg");
-    if (!email) { m.textContent = "اكتب إيميلك فوق الأول."; m.classList.add("show"); return; }
+    const email = $("#loginform").email.value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { msg("#loginmsg", "اكتب إيميلك فوق الأول، وبعدين دوس «نسيت كلمة السر»."); $("#loginform").email.focus(); return; }
     await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-    m.style.background = "#e7f2ee"; m.style.color = "var(--brand)";
-    m.textContent = "لو الإيميل ده مسجل، هيوصلك لينك تختار منه كلمة السر. شوف الـ Inbox والـ Spam."; m.classList.add("show");
+    msg("#loginmsg", "لو الإيميل ده مسجل، هيوصلك لينك تختار منه كلمة سر جديدة. بص في الـ Inbox والـ Spam.", true);
   };
-  $("#logout").onclick = async () => { await sb.auth.signOut(); sessionStorage.removeItem("unlocked"); location.reload(); };
+  async function signOut() { try { await sb.auth.signOut(); } catch (e) {} sessionStorage.removeItem("unlocked"); location.replace(location.pathname); }
+  $("#logout").onclick = signOut;
   $("#refresh").onclick = async () => { await loadAll(); route(); toast("اتحدّث ✓"); };
 
-  // ================= قفل البصمة / Face ID (WebAuthn على الجهاز ده) =================
+  // ================= القفل بالبصمة / Face ID (WebAuthn على الجهاز ده) =================
   const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
-  const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const unb64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
   const lockEnabled = () => !!ls.get("ops_lock_id") && !!window.PublicKeyCredential;
-  function showLock() { if (sessionStorage.getItem("unlocked")) return; $("#lock").hidden = false; }
-  async function tryUnlock() {
+  function showLock() { if (!lockEnabled()) return; sessionStorage.removeItem("unlocked"); showAuth("lock"); tryUnlock(true); }
+  let unlocking = false;
+  async function tryUnlock(auto) {
+    if (unlocking) return; unlocking = true; msg("#lockmsg", "");
     try {
       await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), rpId: location.hostname,
         allowCredentials: [{ type: "public-key", id: unb64(ls.get("ops_lock_id")) }], userVerification: "required", timeout: 60000 } });
-      sessionStorage.setItem("unlocked", "1"); $("#lock").hidden = true;
-    } catch (e) { toast("مقدرتش أتأكد من البصمة — جرب تاني"); }
+      sessionStorage.setItem("unlocked", "1"); startApp();
+    } catch (e) {
+      if (!auto || e.name !== "NotAllowedError") msg("#lockmsg", auto ? "دوس على البصمة عشان تفتح." : "مقدرتش أتأكد — جرب تاني، أو ادخل بكلمة السر.");
+      else msg("#lockmsg", "دوس على البصمة عشان تفتح.", true);
+    } finally { unlocking = false; }
   }
-  $("#unlock").onclick = tryUnlock;
-  $("#lockpw").onclick = async e => { e.preventDefault(); await sb.auth.signOut(); sessionStorage.removeItem("unlocked"); location.reload(); };
+  $("#unlock").onclick = () => tryUnlock(false);
+  $("#lockpw").onclick = e => { e.preventDefault(); ls.set("ops_lock_id", null); signOut(); };
   let hiddenAt = 0;
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) hiddenAt = Date.now();
-    else {
-      unseen = 0; document.title = "لوحة التحكم";
-      if (lockEnabled() && hiddenAt && Date.now() - hiddenAt > 5 * 60000) { sessionStorage.removeItem("unlocked"); showLock(); }
-    }
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    unseen = 0; if (started) document.title = "لوحة التحكم — " + S.name;
+    if (started && lockEnabled() && hiddenAt && Date.now() - hiddenAt > 5 * 60000) showLock();
   });
   async function enableLock() {
     if (!window.PublicKeyCredential) { toast("الجهاز ده مش بيدعم القفل بالبصمة"); return false; }
     try {
       const cred = await navigator.credentials.create({ publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: "Ops's Store Admin", id: location.hostname },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: D.me, displayName: D.me },
+        challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: S.name + " Admin", id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: D.me, displayName: ls.get("ops_name") || D.me },
         pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
         authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" }, timeout: 60000 } });
-      ls.set("ops_lock_id", b64(cred.rawId)); sessionStorage.setItem("unlocked", "1"); toast("القفل بالبصمة اتفعّل ✓"); return true;
-    } catch (e) { toast("ملغي أو الجهاز مش بيدعمه"); return false; }
+      ls.set("ops_lock_id", b64(cred.rawId)); ls.set("ops_remember", "1"); sessionStorage.setItem("unlocked", "1");
+      toast("البصمة اتفعّلت ✓ — هتفتح بيها من هنا ورايح"); return true;
+    } catch (e) { toast("اتلغى أو الجهاز مش بيدعمه"); return false; }
+  }
+  async function offerBio() {
+    if (lockEnabled() || !REM() || ls.get("ops_bio_asked") || !window.PublicKeyCredential) return;
+    try { if (!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())) return; } catch (e) { return; }
+    const sh = document.createElement("div"); sh.className = "sheet";
+    sh.innerHTML = `<div class="sc"><div class="bio-big" style="animation:none;width:76px;height:76px"><svg viewBox="0 0 24 24" style="width:40px;height:40px"><path d="M12 3a7 7 0 0 0-7 7v2M19 10a7 7 0 0 0-3-5.7M12 7a3 3 0 0 0-3 3v3a8 8 0 0 0 1.5 4.7M15 10v3a11 11 0 0 1-1 4.6M12 11v2a14 14 0 0 1-2.4 7.5M18.6 15a14 14 0 0 1-1.8 4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+      <h3>تدخل بالبصمة / Face ID؟</h3><p>من المرة الجاية اللوحة هتفتح ببصمتك أو بوشك على طول، من غير ما تكتب كلمة السر.</p>
+      <button class="auth-btn" id="bioYes">فعّلها</button><button class="auth-btn ghost" id="bioNo">مش دلوقتي</button></div>`;
+    document.body.append(sh);
+    $("#bioYes", sh).onclick = async () => { ls.set("ops_bio_asked", "1"); await enableLock(); sh.remove(); };
+    $("#bioNo", sh).onclick = () => { ls.set("ops_bio_asked", "1"); sh.remove(); };
   }
 
   // ================= التنبيهات =================
@@ -163,6 +222,7 @@
     if (!admins.length && !orders.length) { $("#view").innerHTML = `<div class="empty">مش قادر أجيب البيانات. اتأكد إن إيميلك متضاف في جدول admins.</div>`; }
     const me = admins.find(a => a.email.toLowerCase() === D.me);
     $("#me").textContent = me && me.name ? "أهلاً " + me.name : D.me;
+    if (me && me.name) ls.set("ops_name", me.name);
     checkNew();
   }
 
@@ -769,14 +829,14 @@
       <div class="card"><h3>🔔 الإشعارات</h3>
         <p><b>على الموبايل حتى لو مقفول (ntfy):</b> نزّل تطبيق <b>ntfy</b> ← اضغط ＋ ← اكتب <code dir="ltr">ops-orders-dbffa8f9f448adc5</code> ← Subscribe. أي طلب جديد هيوصلك فيه المنتج والمبلغ والمحافظة.</p>
         <p><b>جوه اللوحة:</b> ${notifOn() ? "✅ شغالة — صوت وإشعار مع كل طلب جديد طول ما اللوحة مفتوحة." : `<button class="btn-s" id="belln">فعّل الصوت والإشعار</button>`}</p></div>
-      <div class="card"><h3>👥 الأدمن</h3><table class="t"><thead><tr><th>الاسم</th><th>الإيميل</th><th>ماسك دلوقتي</th></tr></thead><tbody>
+      <div class="card scroll"><h3>👥 الأدمن</h3><table class="t"><thead><tr><th>الاسم</th><th>الإيميل</th><th>ماسك دلوقتي</th></tr></thead><tbody>
         ${D.admins.map(a => `<tr><td><b>${esc(a.name || "—")}</b>${a.email.toLowerCase() === D.me ? ` <span class="pill me">إنت</span>` : ""}</td><td dir="ltr">${esc(a.email)}</td><td>${D.orders.filter(o => (o.assigned_to || "").toLowerCase() === a.email.toLowerCase() && ["new", "confirmed", "shipped"].includes(o.status)).length} طلب مفتوح</td></tr>`).join("")}
       </tbody></table><p class="meta">إضافة أدمن جديد بتتعمل من Supabase (جدول admins + دعوة من Authentication).</p></div>
       <div class="card"><h3>🔗 لينكات</h3><div class="acts"><a class="btn-s" href="./" target="_blank">🛍️ الموقع</a><a class="btn-s" href="https://supabase.com/dashboard/project/nxrnfjwatgpcavesoyhs" target="_blank" rel="noopener">🗄️ Supabase</a><a class="btn-s" href="https://taager.com" target="_blank" rel="noopener">📦 تاجر</a></div></div>`;
     const on = $("#lockon"), off = $("#lockoff"), tst = $("#locktest"), bn = $("#belln");
     if (on) on.onclick = async () => { if (await enableLock()) route(); };
-    if (off) off.onclick = () => { ls.set("ops_lock_id", null); toast("القفل اتلغى"); route(); };
-    if (tst) tst.onclick = () => { sessionStorage.removeItem("unlocked"); showLock(); };
+    if (off) off.onclick = () => { ls.set("ops_lock_id", null); ls.set("ops_bio_asked", null); toast("البصمة اتلغت"); route(); };
+    if (tst) tst.onclick = () => showLock();
     if (bn) bn.onclick = () => { $("#bell").click(); setTimeout(route, 800); };
   }
 
