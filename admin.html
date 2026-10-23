@@ -55,7 +55,7 @@
 </style>
 </head>
 <body>
-<div class="bar"><div class="wrap"><b id="title">لوحة التحكم</b><span><button id="refresh" hidden>تحديث ↻</button> <button id="logout" hidden>خروج</button></span></div></div>
+<div class="bar"><div class="wrap"><b id="title">لوحة التحكم</b><span><button id="bell" hidden>🔔 فعّل التنبيه</button> <button id="refresh" hidden>تحديث ↻</button> <button id="logout" hidden>خروج</button></span></div></div>
 
 <main class="wrap">
   <section id="loginbox" class="section login" hidden>
@@ -130,9 +130,10 @@
     const { data:{ session } } = await sb.auth.getSession();
     if (session && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
     if (!session) { $("#loginbox").hidden = false; return; }
-    $("#app").hidden = false; $("#logout").hidden = false; $("#refresh").hidden = false;
+    $("#app").hidden = false; $("#logout").hidden = false; $("#refresh").hidden = false; $("#bell").hidden = false;
+    bellLabel();
     await load();
-    setInterval(load, 60000);
+    setInterval(load, 30000);
   }
 
   $("#loginform").onsubmit = async e => {
@@ -171,6 +172,35 @@
     m.style.background = "#e7f2ee"; m.style.color = "var(--brand)";
     m.textContent = "لو الإيميل ده مسجل، هيوصلك لينك تختار منه كلمة السر. شوف الـ Inbox والـ Spam."; m.classList.add("show");
   };
+  // تنبيه الطلبات الجديدة: صوت + إشعار من المتصفح + عداد في عنوان التاب (طول ما الصفحة مفتوحة)
+  let lastId = null, unseen = 0, actx = null;
+  const bellLabel = () => { $("#bell").textContent = ("Notification" in window && Notification.permission === "granted") ? "🔔 التنبيه شغال" : "🔔 فعّل التنبيه"; };
+  $("#bell").onclick = async () => {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); await actx.resume(); } catch (e) {}
+    if ("Notification" in window && Notification.permission !== "granted") { try { await Notification.requestPermission(); } catch (e) {} }
+    bellLabel(); ding();
+  };
+  function ding(){
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.18, 0.36].forEach((t, i) => { const o = actx.createOscillator(), g = actx.createGain();
+        o.frequency.value = [880, 1175, 1568][i]; o.connect(g); g.connect(actx.destination);
+        g.gain.setValueAtTime(0.0001, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.3, actx.currentTime + t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + t + 0.25); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + 0.3); });
+    } catch (e) {}
+  }
+  function checkNew(){
+    const maxId = orders.reduce((m, o) => Math.max(m, o.id || 0), 0);
+    if (lastId !== null && maxId > lastId) {
+      const fresh = orders.filter(o => o.id > lastId);
+      unseen += fresh.length; ding();
+      document.title = `(${unseen}) طلب جديد — لوحة التحكم`;
+      if ("Notification" in window && Notification.permission === "granted") fresh.forEach(o => {
+        try { new Notification("طلب جديد " + (o.country === "SA" ? "🇸🇦" : "🇪🇬") + " " + o.order_no, { body: `${o.product_name} × ${o.qty} — ${o.total} ${o.currency}\n${o.governorate || ""}`, tag: o.order_no }); } catch (e) {}
+      });
+    }
+    if (lastId === null || maxId > lastId) lastId = maxId;
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { unseen = 0; document.title = "لوحة التحكم"; } });
   $("#logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
   $("#refresh").onclick = load;
   $("#q").oninput = render;
@@ -184,6 +214,7 @@
     const { data, error } = await sb.from("orders").select("*").gte("created_at", since).order("created_at", { ascending:false }).limit(2000);
     if (error) { $("#list").innerHTML = `<div class="empty">مش قادر أجيب الطلبات: ${esc(error.message)}<br>اتأكد إن إيميلك متضاف في جدول admins.</div>`; return; }
     orders = data || [];
+    checkNew();
     const lr = await sb.from("leads").select("*").eq("converted", false).gte("created_at", since).order("created_at", { ascending:false }).limit(500);
     leads = lr.data || [];
     kpis(); render();
