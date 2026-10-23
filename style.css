@@ -312,3 +312,8 @@ footer.site .wrap{grid-template-columns:1.3fr 1fr 1fr 1fr}
 .thumbs .vthumb.on{border-color:var(--orange)}
 .pcard .vbadge{position:absolute;z-index:2;top:12px;inset-inline-start:26px;background:#D9541A;color:#fff;font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px}
 .pcard .wbadge{position:absolute;z-index:2;top:12px;inset-inline-end:14px;background:#fff;color:var(--olive);font-size:12px;font-weight:800;padding:3px 9px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.catbar{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;scrollbar-width:none}
+.catbar::-webkit-scrollbar{display:none}
+.catbar .cat{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+.catbar .cat.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pcard[hidden]{display:none!important}

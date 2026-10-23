@@ -142,6 +142,28 @@
     document.body.append(f);
   }
 
+
+  // ---------- الكتالوج من قاعدة البيانات (اللي بيتعدل من لوحة التحكم) — config.js احتياطي لو النت وقع ----------
+  async function syncCatalog() {
+    if (!S.supabaseUrl || !S.supabaseAnonKey) return;
+    const H = { apikey: S.supabaseAnonKey, Authorization: "Bearer " + S.supabaseAnonKey };
+    const get = t => fetch(S.supabaseUrl.replace(/\/$/, "") + "/rest/v1/" + t, { headers: H }).then(r => { if (!r.ok) throw r.status; return r.json(); });
+    const timeout = new Promise((_, rej) => setTimeout(() => rej("timeout"), 3500));
+    try {
+      const [prods, offers, cats] = await Promise.race([Promise.all([
+        get("products?select=id,name,price,price_sa,active,category_id,data,sort,season&is_addon=eq.false&data=not.is.null&order=sort.asc"),
+        get("product_offers?select=product_id,country,qty,total"),
+        get("categories?select=id,name,icon,sort,active&order=sort.asc")]), timeout]);
+      const list = prods.filter(p => p.active).map(p => {
+        const o = { EG: {}, SA: {} };
+        offers.filter(x => x.product_id === p.id).forEach(x => { (o[x.country] = o[x.country] || {})[x.qty] = x.total; });
+        return Object.assign({}, p.data, { id: p.id, name: p.name, price: p.price, priceSA: p.price_sa, season: p.season, category: p.category_id, offers: o });
+      });
+      if (list.length) S.products = list;
+      S.categories = cats.filter(c => c.active);
+    } catch (e) { /* نكمل بالبيانات اللي في config.js */ }
+  }
+
   // ---------- Home ----------
   function renderHome() {
     $("#store-tagline").textContent = S.tagline;
@@ -151,8 +173,17 @@
     const list = S.products.filter(available);
     $("#hero-lens").innerHTML = (list.length ? media(list[0]) : ICONS.monocular) + (list.length && list[0].specs ? `<span class="spec">${list[0].specs[0]}</span>` : "");
     if (!list.length) { $("#products").innerHTML = `<p style="color:var(--muted);text-align:center">المنتجات هتنزل في ${C.name} قريب.</p>`; return; }
+    const cats = (S.categories || []).filter(c => list.some(p => p.category === c.id));
+    let bar = $("#catbar");
+    if (cats.length > 1) {
+      if (!bar) { bar = document.createElement("div"); bar.id = "catbar"; bar.className = "catbar"; $("#products").before(bar); }
+      bar.innerHTML = `<button class="cat on" data-c="">الكل</button>` + cats.map(c => `<button class="cat" data-c="${c.id}">${c.icon || ""} ${c.name}</button>`).join("");
+      bar.onclick = e => { const b = e.target.closest(".cat"); if (!b) return;
+        bar.querySelectorAll(".cat").forEach(x => x.classList.toggle("on", x === b));
+        document.querySelectorAll("#products .pcard").forEach(card => { card.hidden = !!b.dataset.c && card.dataset.cat !== b.dataset.c; }); };
+    }
     $("#products").innerHTML = list.map(p => `
-      <a class="pcard" href="product.html?p=${p.id}">
+      <a class="pcard" href="product.html?p=${p.id}" data-cat="${p.category || ""}">
         <div class="mat">${media(p)}${p.video ? `<span class="vbadge">▶ فيديو</span>` : ""}${p.season === "winter" ? `<span class="wbadge">❄ للشتا</span>` : ""}</div>
         <div class="body">
           <h3>${p.name}</h3><div class="sub">${p.subtitle}</div>
@@ -371,9 +402,10 @@
     };
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    chrome(); initPixels();
+  document.addEventListener("DOMContentLoaded", async () => {
     const page = document.body.dataset.page;
+    if (page === "home" || page === "product") await syncCatalog();
+    chrome(); initPixels();
     if (page === "home") renderHome();
     if (page === "product") renderProduct();
     if (page === "thanks") renderThanks();
