@@ -101,6 +101,7 @@
     const u = new URLSearchParams(location.search);
     const src = ["utm_source","utm_campaign","utm_content"].map(k => u.get(k)).filter(Boolean).join("|");
     if (src) sessionStorage.setItem("src", src);
+    if (u.get("fbclid")) sessionStorage.setItem("fbclid", u.get("fbclid"));
   } catch (e) {}
   const source = () => { try { return sessionStorage.getItem("src") || document.referrer.split("/")[2] || "direct"; } catch (e) { return "direct"; } };
 
@@ -114,9 +115,9 @@
       !function (w, d, t) {w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load(S.tiktokPixelId);ttq.page();}(window, document, 'ttq');
     }
   }
-  const track = (ev, data) => {
-    try { if (window.fbq) fbq('track', ev, data); } catch (e) {}
-    try { if (window.ttq) ttq.track(ev === "Purchase" ? "CompletePayment" : ev, data); } catch (e) {}
+  const track = (ev, data, eventID) => {
+    try { if (window.fbq) eventID ? fbq('track', ev, data, { eventID: String(eventID) }) : fbq('track', ev, data); } catch (e) {}
+    try { if (window.ttq) ttq.track(ev === "Purchase" ? "CompletePayment" : ev, data, eventID ? { event_id: String(eventID) } : undefined); } catch (e) {}
   };
 
   // ---------- Header / footer ----------
@@ -338,7 +339,20 @@
           orderNo = "WA-" + Date.now().toString().slice(-6);
           window.open(waLink(`طلب جديد ${orderNo}\n${p.name} × ${qty}${withAddon ? " + " + a.name : ""} = ${total()} ${C.currency}\nالاسم: ${data.p_name}\nالموبايل: ${data.p_phone}\nالعنوان: ${data.p_governorate} - ${data.p_city} - ${data.p_address}${data.p_landmark ? " (" + data.p_landmark + ")" : ""}\nملاحظات: ${data.p_notes || "-"}`), "_blank");
         }
-        track("Purchase", { content_ids: [p.id], value: total(), currency: cur });
+        track("Purchase", { content_ids: [p.id], content_type: "product", num_items: qty, value: total(), currency: cur }, orderNo);
+        if (S.supabaseUrl && S.supabaseAnonKey && !String(orderNo).startsWith("WA-")) {
+          const ck = n => (document.cookie.match("(?:^|; )" + n + "=([^;]*)") || [])[1] || null;
+          let fbc = ck("_fbc");
+          if (!fbc) { try { const id = sessionStorage.getItem("fbclid"); if (id) fbc = "fb.1." + Date.now() + "." + id; } catch (e) {} }
+          await Promise.race([
+            fetch(S.supabaseUrl.replace(/\/$/, "") + "/rest/v1/rpc/track_order", {
+              method: "POST", keepalive: true,
+              headers: { "Content-Type": "application/json", apikey: S.supabaseAnonKey, Authorization: "Bearer " + S.supabaseAnonKey },
+              body: JSON.stringify({ p_order_no: orderNo, p_fbp: ck("_fbp"), p_fbc: fbc, p_url: location.href.split("#")[0] })
+            }).catch(() => {}),
+            new Promise(r => setTimeout(r, 1500))
+          ]);
+        }
         try { sessionStorage.setItem("lastOrder", JSON.stringify({ no: orderNo, name: p.name + " × " + qty + (withAddon ? " + " + a.name : ""), qty, total: total(), cname: data.p_name })); } catch (e) {}
         location.href = "thanks.html?o=" + encodeURIComponent(orderNo);
       } catch (err) {

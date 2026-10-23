@@ -832,12 +832,36 @@
       <div class="card scroll"><h3>👥 الأدمن</h3><table class="t"><thead><tr><th>الاسم</th><th>الإيميل</th><th>ماسك دلوقتي</th></tr></thead><tbody>
         ${D.admins.map(a => `<tr><td><b>${esc(a.name || "—")}</b>${a.email.toLowerCase() === D.me ? ` <span class="pill me">إنت</span>` : ""}</td><td dir="ltr">${esc(a.email)}</td><td>${D.orders.filter(o => (o.assigned_to || "").toLowerCase() === a.email.toLowerCase() && ["new", "confirmed", "shipped"].includes(o.status)).length} طلب مفتوح</td></tr>`).join("")}
       </tbody></table><p class="meta">إضافة أدمن جديد بتتعمل من Supabase (جدول admins + دعوة من Authentication).</p></div>
+      <div class="card" id="capicard"><h3>📈 ربط الإعلانات (Meta Conversions API)</h3>
+        <p class="meta">بيبعت كل طلب لفيسبوك من السيرفر (حتى لو العميل عنده مانع إعلانات أو آيفون)، وبيبعت «Delivered» لما تعلّم الطلب «اتسلم». البيانات بتتبعت مشفّرة. Pixel: <code dir="ltr">1633906028770855</code></p>
+        <div id="capist" class="meta">…</div>
+        <div class="acts" style="flex-wrap:wrap"><input id="capitok" type="password" autocomplete="off" placeholder="الصق الـ Access Token هنا" dir="ltr" style="flex:1;min-width:0;font-size:16px;padding:10px;border:1px solid var(--line,#ddd);border-radius:10px">
+        <input id="capitest" placeholder="Test code (اختياري)" dir="ltr" style="width:150px;max-width:100%;font-size:16px;padding:10px;border:1px solid var(--line,#ddd);border-radius:10px">
+        <button class="btn-s pri" id="capisave">حفظ</button></div>
+        <p class="meta">التوكن بيتجاب من Events Manager ← Ops Store ← Settings ← Conversions API ← Generate access token. بعد ما يتحفظ مش بيظهر تاني لأي حد.</p></div>
       <div class="card"><h3>🔗 لينكات</h3><div class="acts"><a class="btn-s" href="./" target="_blank">🛍️ الموقع</a><a class="btn-s" href="https://supabase.com/dashboard/project/nxrnfjwatgpcavesoyhs" target="_blank" rel="noopener">🗄️ Supabase</a><a class="btn-s" href="https://taager.com" target="_blank" rel="noopener">📦 تاجر</a></div></div>`;
     const on = $("#lockon"), off = $("#lockoff"), tst = $("#locktest"), bn = $("#belln");
     if (on) on.onclick = async () => { if (await enableLock()) route(); };
     if (off) off.onclick = () => { ls.set("ops_lock_id", null); ls.set("ops_bio_asked", null); toast("البصمة اتلغت"); route(); };
     if (tst) tst.onclick = () => showLock();
     if (bn) bn.onclick = () => { $("#bell").click(); setTimeout(route, 800); };
+    const capi = async () => {
+      const st = $("#capist"); if (!st) return;
+      const { data, error } = await sb.rpc("capi_status");
+      if (error) { st.textContent = "مش متاح: " + error.message; return; }
+      st.innerHTML = (data.has_token ? "✅ التوكن متحفظ" : "⚠️ لسه مفيش توكن — الطلبات بتتبعت من البيكسل بس") + (data.test_code ? ` · وضع التجربة: <code dir="ltr">${esc(data.test_code)}</code>` : "") +
+        (data.last.length ? `<div class="scroll"><table class="t"><thead><tr><th>الحدث</th><th>الطلب</th><th>الرد</th></tr></thead><tbody>${data.last.map(r => `<tr><td>${esc(r.event)}</td><td dir="ltr">${esc(r.order_no)}</td><td>${r.status_code == 200 ? "✅ 200" : r.status_code ? `❌ ${r.status_code} <span class="meta" dir="ltr">${esc(r.body)}</span>` : "⏳"}</td></tr>`).join("")}</tbody></table></div>` : "");
+      $("#capitest").value = data.test_code || "";
+    };
+    capi();
+    const cs = $("#capisave");
+    if (cs) cs.onclick = async () => {
+      cs.disabled = true;
+      const { error } = await sb.rpc("set_capi_token", { p_token: $("#capitok").value.trim() || null, p_test_code: $("#capitest").value.trim() || null });
+      cs.disabled = false;
+      if (error) { toast("ماتحفظش: " + error.message); return; }
+      $("#capitok").value = ""; toast("اتحفظ ✅"); capi();
+    };
   }
 
   boot();
