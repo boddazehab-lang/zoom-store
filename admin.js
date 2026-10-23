@@ -504,7 +504,7 @@
   const offerOf = (id, cc) => (D.offers.find(o => o.product_id === id && o.country === cc && o.qty === 2) || {}).total;
   function vProducts() {
     const sold = {}; D.orders.filter(o => o.status !== "cancelled").forEach(o => { sold[o.product_id] = (sold[o.product_id] || 0) + o.qty; });
-    let list = D.products.filter(p => !p.is_addon);
+    let list = D.products.filter(p => !p.is_addon && (p.data || p.active));
     if (prodState.cat) list = list.filter(p => (p.category_id || "") === prodState.cat);
     if (prodState.cc) list = list.filter(p => prodState.cc === "EG" ? p.price : p.price_sa);
     $("#view").innerHTML = `<h1 class="sec">المنتجات <span class="sp"></span><button class="btn-s pri" id="newp">＋ منتج جديد</button></h1>
