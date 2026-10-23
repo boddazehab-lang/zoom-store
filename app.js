@@ -153,7 +153,7 @@
     if (!list.length) { $("#products").innerHTML = `<p style="color:var(--muted);text-align:center">المنتجات هتنزل في ${C.name} قريب.</p>`; return; }
     $("#products").innerHTML = list.map(p => `
       <a class="pcard" href="product.html?p=${p.id}">
-        <div class="mat">${media(p)}${p.video ? `<span class="vbadge">▶ فيديو</span>` : ""}</div>
+        <div class="mat">${media(p)}${p.video ? `<span class="vbadge">▶ فيديو</span>` : ""}${p.season === "winter" ? `<span class="wbadge">❄ للشتا</span>` : ""}</div>
         <div class="body">
           <h3>${p.name}</h3><div class="sub">${p.subtitle}</div>
           <div class="chips">${chips(p)}</div>
