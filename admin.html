@@ -1,370 +1,189 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8"><link rel="icon" type="image/svg+xml" href="ops-favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="ops-favicon-32.png"><link rel="apple-touch-icon" href="ops-apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="Ops's Store"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1A2420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ops Admin">
 <title>لوحة التحكم</title>
+<link rel="icon" type="image/svg+xml" href="ops-favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="ops-favicon-32.png">
+<link rel="apple-touch-icon" href="ops-apple-touch-icon.png">
+<link rel="manifest" href="admin.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <style>
-  body{background:#eef0f2}
-  .bar{background:var(--ink);color:#fff}
-  .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:56px}
-  .bar b{font-size:18px}
-  .bar button{background:transparent;color:#fff;border:1px solid #ffffff55;border-radius:10px;padding:6px 12px;font:inherit;cursor:pointer}
-  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+  :root{--side:236px}
+  body{background:#eef0f2;padding-bottom:env(safe-area-inset-bottom)}
+  .bar{background:var(--ink);color:#fff;position:sticky;top:0;z-index:30;padding-top:env(safe-area-inset-top)}
+  .bar .in{display:flex;justify-content:space-between;align-items:center;height:56px;padding:0 16px;gap:10px}
+  .bar b{font-size:17px;white-space:nowrap}
+  .bar .me{font-size:13px;opacity:.75}
+  .bar button{background:transparent;color:#fff;border:1px solid #ffffff55;border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+  .shell{display:grid;grid-template-columns:var(--side) 1fr;min-height:calc(100vh - 56px)}
+  nav.side{background:#fff;border-inline-end:1px solid var(--line);padding:12px 10px;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;box-sizing:border-box}
+  nav.side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px;margin-bottom:2px}
+  nav.side a i{font-style:normal;width:22px;text-align:center}
+  nav.side a.on{background:var(--ink);color:#fff}
+  nav.side a .badge{margin-inline-start:auto;background:#D9541A;color:#fff;border-radius:999px;font-size:12px;padding:1px 8px}
+  nav.side .grp{font-size:12px;color:var(--muted);margin:14px 12px 6px}
+  main.content{padding:18px 20px 90px;min-width:0}
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;display:flex;overflow-x:auto;padding:6px 6px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);border-inline-end:0;z-index:30;gap:2px}
+    nav.side .grp{display:none}
+    nav.side a{flex-direction:column;gap:2px;font-size:11px;padding:6px 8px;min-width:62px;margin:0;position:relative;flex:none}
+    nav.side a i{font-size:18px}
+    nav.side a .badge{position:absolute;top:0;inset-inline-end:4px;font-size:10px;padding:0 5px}
+    main.content{padding:14px 12px 100px}
+    .bar .me{display:none}
+  }
+  h1.sec{font-size:22px;margin:0 0 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  h1.sec .sp{flex:1}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  .filters select,.filters input{font:inherit;font-size:14px;padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff}
+  .filters input{flex:1;min-width:170px}
+  .btn-s{font:inherit;font-size:14px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;white-space:nowrap;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+  .btn-s.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .btn-s.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn-s.wa{background:#1f9d55;color:#fff;border-color:#1f9d55}
+  .btn-s.danger{color:#991b1b;border-color:#fecaca;background:#fff5f5}
+  .btn-s:disabled{opacity:.5}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px;margin-bottom:16px}
   .kpi{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
-  .kpi small{color:var(--muted);font-size:13px;display:block}
-  .kpi b{font-size:24px}
-  @media (max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}}
-  .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
-  .tools select,.tools input{font:inherit;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff}
-  .tools input{flex:1;min-width:180px}
-  .tools .btn{padding:9px 14px;font-size:14px}
+  .kpi small{color:var(--muted);font-size:13px;display:block;margin-bottom:2px}
+  .kpi b{font-size:21px;font-variant-numeric:tabular-nums}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .card{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card h3 .sp{flex:1}
+  .grid2c{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:1000px){.grid2c{grid-template-columns:1fr}}
+  .scroll{overflow-x:auto}
+  table.t{width:100%;border-collapse:collapse;font-size:14px}
+  table.t th{text-align:right;color:var(--muted);font-weight:600;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px}
+  table.t td{padding:8px;border-bottom:1px solid #EEF0EC;font-variant-numeric:tabular-nums;vertical-align:middle}
+  table.t tr.click{cursor:pointer}
+  table.t tr.click:hover td{background:#f7f8f6}
   .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
   .tab{border:0;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
   .tab.on{background:var(--brand);color:#fff}
   .tab i{font-style:normal;opacity:.7;margin-inline-start:4px}
   .ord{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:1.3fr 1fr auto;gap:10px;align-items:center}
-  @media (max-width:800px){.ord{grid-template-columns:1fr}}
-  .ord .no{font-weight:800}
-  .ord .meta{color:var(--muted);font-size:13px}
-  .ord .acts{display:flex;gap:6px;flex-wrap:wrap}
-  .ord .acts a,.ord .acts select{font:inherit;font-size:13px;padding:7px 10px;border-radius:9px;border:1.5px solid var(--line);background:#fff;text-decoration:none}
-  .ord .acts a.wa{background:#1f9d55;color:#fff;border-color:#1f9d55}
-  .st{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px}
+  @media (max-width:860px){.ord{grid-template-columns:1fr}}
+  .ord .no{font-weight:800;cursor:pointer}
+  .meta{color:var(--muted);font-size:13px}
+  .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .acts select,.acts a,.acts button{font:inherit;font-size:13px;padding:7px 10px;border-radius:9px;border:1.5px solid var(--line);background:#fff;text-decoration:none;color:var(--ink);cursor:pointer}
+  .acts a.wa{background:#1f9d55;color:#fff;border-color:#1f9d55}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
   .st-new{background:#fff3cd;color:#8a6100}.st-confirmed{background:#dbeafe;color:#1e40af}.st-shipped{background:#ede9fe;color:#5b21b6}
   .st-delivered{background:#dcfce7;color:#166534}.st-returned{background:#fee2e2;color:#991b1b}.st-cancelled{background:#e5e7eb;color:#374151}
-  .st-kpis{grid-template-columns:repeat(5,1fr);margin-top:0}
-  .st-card{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
-  .st-card h3{margin:0 0 10px;font-size:17px}
-  .st-scroll{overflow-x:auto}
-  table.st{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
-  table.st th{text-align:right;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-  table.st td{padding:8px;border-bottom:1px solid #EEF0EC;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;background:#f1f3f0;color:#374151;white-space:nowrap}
+  .pill.me{background:#e0f2fe;color:#075985}
+  .flag{color:#b91c1c;font-weight:700;font-size:12px}
   .rt{font-weight:700;padding:2px 8px;border-radius:999px;font-size:13px}
   .rt.good{background:#dcfce7;color:#166534}.rt.mid{background:#fff3cd;color:#8a6100}.rt.bad{background:#fee2e2;color:#991b1b}
-  @media (max-width:800px){.st-kpis{grid-template-columns:repeat(2,1fr)}}
-  .note{width:100%;font:inherit;font-size:13px;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin-top:6px}
-  .login{max-width:380px;margin:60px auto}
+  .pos{color:#166534;font-weight:700}.neg{color:#991b1b;font-weight:700}
   .empty{text-align:center;color:var(--muted);padding:40px 0}
-  .dup{color:var(--danger);font-weight:700;font-size:12px}
+  .login{max-width:380px;margin:60px auto;padding:0 16px}
+  .chart{width:100%;height:auto;display:block}
+  .chart rect.b{fill:var(--brand)}
+  .chart rect.b:hover{fill:var(--ink)}
+  .chart text{font-family:inherit;font-size:11px;fill:#6b7280}
+  .chart line{stroke:#e5e7eb}
+  .hbar{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:8px;align-items:center;font-size:14px;margin:7px 0}
+  .hbar .tr{background:#f1f3f0;border-radius:4px;height:12px;overflow:hidden}
+  .hbar .fl{background:var(--brand);height:100%;border-radius:0 4px 4px 0}
+  .hbar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ov{position:fixed;inset:0;background:#0007;z-index:50;display:flex;justify-content:flex-start}
+  .drawer{background:#f7f8f6;width:min(720px,100%);height:100%;overflow:auto;padding:0 0 40px;box-shadow:0 0 40px #0004}
+  .drawer .dh{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:10px;z-index:2}
+  .drawer .dh b{font-size:17px;flex:1}
+  .drawer .db{padding:16px}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .fgrid .full{grid-column:1/-1}
+  @media (max-width:600px){.fgrid{grid-template-columns:1fr}}
+  .f label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  .f input,.f select,.f textarea{width:100%;font:inherit;font-size:15px;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;background:#fff;box-sizing:border-box}
+  .f textarea{min-height:84px;resize:vertical;line-height:1.6}
+  .f .hint{font-size:12px;color:var(--muted);margin-top:3px}
+  .timeline{list-style:none;margin:0;padding:0}
+  .timeline li{padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .timeline li small{color:var(--muted);display:block}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .thumbs .th{position:relative;width:74px;height:74px;border-radius:10px;overflow:hidden;background:#fff;border:1px solid var(--line)}
+  .thumbs .th img{width:100%;height:100%;object-fit:cover}
+  .thumbs .th button{position:absolute;top:2px;left:2px;border:0;background:#000a;color:#fff;border-radius:6px;font-size:11px;cursor:pointer;padding:1px 5px}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .pc{background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .pc .im{aspect-ratio:16/10;background:#f1f3f0;position:relative;cursor:pointer}
+  .pc .im img{width:100%;height:100%;object-fit:cover}
+  .pc .im .pill{position:absolute;top:8px;inset-inline-start:8px}
+  .pc .bd{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:6px}
+  .pc .bd h4{margin:0;font-size:15px;line-height:1.4}
+  .pc .row{display:flex;justify-content:space-between;font-size:13px;gap:8px}
+  .pc.off .im{opacity:.45}
+  .switch{position:relative;display:inline-block;width:42px;height:24px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .switch span{position:absolute;inset:0;background:#d1d5db;border-radius:999px;transition:.2s;cursor:pointer}
+  .switch span:before{content:"";position:absolute;width:18px;height:18px;right:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked+span{background:#16a34a}
+  .switch input:checked+span:before{transform:translateX(-18px)}
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;z-index:80;font-size:14px;box-shadow:0 8px 24px #0003;max-width:90vw}
+  .lock{position:fixed;inset:0;background:var(--ink);color:#fff;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px}
+  .lock[hidden]{display:none}
+  .lock .ic{font-size:56px}
+  .lock button{font:inherit;font-size:17px;padding:14px 26px;border-radius:14px;border:0;background:#D9541A;color:#fff;cursor:pointer}
+  .lock a{color:#ffffffaa;font-size:14px}
+  .attn{margin:0;padding-inline-start:18px}
+  .attn li{margin:6px 0}
+  .note{width:100%;font:inherit;font-size:13px;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin-top:6px;box-sizing:border-box}
 </style>
 </head>
 <body>
-<div class="bar"><div class="wrap"><b id="title">لوحة التحكم</b><span><button id="bell" hidden>🔔 فعّل التنبيه</button> <button id="refresh" hidden>تحديث ↻</button> <button id="logout" hidden>خروج</button></span></div></div>
+<div class="bar"><div class="in"><b id="title">لوحة التحكم</b><span class="me" id="me"></span><span style="display:flex;gap:6px"><button id="bell" hidden>🔔</button><button id="refresh" hidden>↻</button><button id="logout" hidden>خروج</button></span></div></div>
 
-<main class="wrap">
-  <section id="loginbox" class="section login" hidden>
-    <h2>دخول الأدمن</h2>
-    <form id="loginform">
-      <div class="field"><label>الإيميل</label><input name="email" type="email" required dir="ltr"></div>
-      <div class="field"><label>كلمة السر</label><input name="password" type="password" required dir="ltr"></div>
-      <button class="btn btn-primary" style="width:100%">دخول</button>
-      <div class="formmsg error" id="loginmsg"></div>
-      <p style="text-align:center;margin:12px 0 0"><a href="#" id="forgot" style="font-size:14px">نسيت كلمة السر / أول مرة تدخل؟</a></p>
-    </form>
-  </section>
+<section id="loginbox" class="section login" hidden>
+  <h2>دخول الأدمن</h2>
+  <form id="loginform">
+    <div class="field"><label>الإيميل</label><input name="email" type="email" required dir="ltr" autocomplete="username"></div>
+    <div class="field"><label>كلمة السر</label><input name="password" type="password" required dir="ltr" autocomplete="current-password"></div>
+    <button class="btn btn-primary" style="width:100%">دخول</button>
+    <div class="formmsg error" id="loginmsg"></div>
+    <p style="text-align:center;margin:12px 0 0"><a href="#" id="forgot" style="font-size:14px">نسيت كلمة السر / أول مرة تدخل؟</a></p>
+  </form>
+</section>
+<section id="setpw" class="section login" hidden>
+  <h2>اختار كلمة السر بتاعتك</h2>
+  <p class="meta">دي اللي هتدخل بيها لوحة التحكم بعد كده. على الأقل 10 حروف.</p>
+  <form id="pwform">
+    <div class="field"><label>كلمة السر الجديدة</label><input name="p1" type="password" minlength="10" required dir="ltr" autocomplete="new-password"></div>
+    <div class="field"><label>اكتبها تاني</label><input name="p2" type="password" minlength="10" required dir="ltr" autocomplete="new-password"></div>
+    <button class="btn btn-primary" style="width:100%">حفظ ودخول</button>
+    <div class="formmsg error" id="pwmsg"></div>
+  </form>
+</section>
+<section id="setup" class="section" hidden><h2>لسه محتاج تربط قاعدة البيانات</h2><p>حط supabaseUrl و supabaseAnonKey في config.js.</p></section>
 
-  <section id="setpw" class="section login" hidden>
-    <h2>اختار كلمة السر بتاعتك</h2>
-    <p class="meta" style="color:var(--muted)">دي اللي هتدخل بيها لوحة التحكم بعد كده. على الأقل 10 حروف.</p>
-    <form id="pwform">
-      <div class="field"><label>كلمة السر الجديدة</label><input name="p1" type="password" minlength="10" required dir="ltr" autocomplete="new-password"></div>
-      <div class="field"><label>اكتبها تاني</label><input name="p2" type="password" minlength="10" required dir="ltr" autocomplete="new-password"></div>
-      <button class="btn btn-primary" style="width:100%">حفظ ودخول</button>
-      <div class="formmsg error" id="pwmsg"></div>
-    </form>
-    <p style="margin-top:14px"><a href="#" id="forgot2" hidden></a></p>
-  </section>
+<div class="shell" id="app" hidden>
+  <nav class="side" id="nav"></nav>
+  <main class="content" id="view"></main>
+</div>
+<div id="lock" class="lock" hidden>
+  <div class="ic">🔒</div>
+  <h2 style="margin:0">لوحة التحكم مقفولة</h2>
+  <button id="unlock">افتح بالبصمة / Face ID</button>
+  <a href="#" id="lockpw">ادخل بكلمة السر بدل كده</a>
+</div>
 
-  <section id="setup" class="section" hidden>
-    <h2>لسه محتاج تربط قاعدة البيانات</h2>
-    <p>افتح ملف <b>config.js</b> وحط <b>supabaseUrl</b> و<b>supabaseAnonKey</b> من Supabase، وبعدين ارفع الموقع تاني. الخطوات كلها في ملف «خطوات_التشغيل».</p>
-  </section>
-
-  <section id="app" hidden>
-    <div class="kpis">
-      <div class="kpi"><small>طلبات النهارده</small><b id="k-today">0</b></div>
-      <div class="kpi"><small>مستني تأكيد</small><b id="k-new">0</b></div>
-      <div class="kpi"><small>نسبة التسليم</small><b id="k-rate">—</b></div>
-      <div class="kpi"><small>مبيعات اتسلمت (الشهر ده)</small><b id="k-rev">0</b></div>
-      <div class="kpi"><small>طلبات الشهر ده</small><b id="k-month">0</b></div>
-    </div>
-    <div class="tabs" id="tabs"></div>
-    <div class="tools">
-      <input id="q" placeholder="بحث بالاسم أو الموبايل أو رقم الطلب">
-      <select id="cc"><option value="">كل الدول</option><option value="EG">🇪🇬 مصر</option><option value="SA">🇸🇦 السعودية</option></select>
-      <select id="range"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يوم</option><option value="90">آخر 90 يوم</option><option value="3650">الكل</option></select>
-      <button class="btn btn-ghost" id="csv">⬇ تصدير للشحن (Excel/CSV)</button>
-    </div>
-    <div id="list"></div>
-  </section>
-</main>
-
-<script>
-(function(){
-  const S = window.STORE, $ = q => document.querySelector(q);
-  const STATUS = { new:"جديد", confirmed:"متأكد", shipped:"اتشحن", delivered:"اتسلم", returned:"مرتجع", cancelled:"ملغي" };
-  const CUR = { EGP:"ج", SAR:"ر.س" };
-  const money = (n, c = "EGP") => Number(n||0).toLocaleString("en-US") + " " + (CUR[c] || c);
-  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  $("#title").textContent = "لوحة التحكم — " + S.name;
-
-  if (!S.supabaseUrl || !S.supabaseAnonKey) { $("#setup").hidden = false; return; }
-  const linkType = (location.hash.match(/type=(invite|recovery|signup|magiclink)/) || [])[1];
-  const hp = new URLSearchParams(location.hash.slice(1));
-  const linkToken = hp.get("access_token"), linkRefresh = hp.get("refresh_token");
-  const linkErr = hp.get("error_description");
-  const sb = supabase.createClient(S.supabaseUrl, S.supabaseAnonKey);
-
-  let orders = [], leads = [], tab = "new";
-  const FLAG = { refuser:"⛔ رفض طلبين قبل كده", duplicate:"⚠ عنده طلب مفتوح" };
-
-  async function boot(){
-    if (linkErr) { $("#loginbox").hidden = false; const m = $("#loginmsg"); m.textContent = "اللينك ده انتهى أو اتستخدم قبل كده. اكتب إيميلك ودوس «نسيت كلمة السر» تاني."; m.classList.add("show"); history.replaceState(null, "", location.pathname); return; }
-    if (linkToken && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
-    const { data:{ session } } = await sb.auth.getSession();
-    if (session && linkType) { history.replaceState(null, "", location.pathname); $("#setpw").hidden = false; return; }
-    if (!session) { $("#loginbox").hidden = false; return; }
-    $("#app").hidden = false; $("#logout").hidden = false; $("#refresh").hidden = false; $("#bell").hidden = false;
-    bellLabel();
-    await load();
-    setInterval(load, 30000);
-  }
-
-  $("#loginform").onsubmit = async e => {
-    e.preventDefault();
-    const f = e.target, m = $("#loginmsg"); m.classList.remove("show");
-    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
-    if (error) { m.textContent = "الإيميل أو كلمة السر غلط."; m.classList.add("show"); return; }
-    location.reload();
-  };
-  $("#pwform").onsubmit = async e => {
-    e.preventDefault();
-    const f = e.target, m = $("#pwmsg"); m.classList.remove("show");
-    if (f.p1.value !== f.p2.value) { m.textContent = "الكلمتين مش زي بعض."; m.classList.add("show"); return; }
-    const btn = f.querySelector("button"); btn.disabled = true;
-    let ok = false, msg = "";
-    if (linkToken) {
-      // تحديث كلمة السر مباشرة بالتوكن اللي في اللينك (بيشتغل حتى في متصفح Gmail/Google)
-      const r = await fetch(S.supabaseUrl.replace(/\/$/, "") + "/auth/v1/user", { method: "PUT",
-        headers: { "Content-Type": "application/json", apikey: S.supabaseAnonKey, Authorization: "Bearer " + linkToken },
-        body: JSON.stringify({ password: f.p1.value }) });
-      ok = r.ok; if (!ok) { const j = await r.json().catch(() => ({})); msg = j.msg || j.message || j.error_description || r.status; }
-      if (ok && linkRefresh) { try { await sb.auth.setSession({ access_token: linkToken, refresh_token: linkRefresh }); } catch (e) {} }
-    } else {
-      const { error } = await sb.auth.updateUser({ password: f.p1.value });
-      ok = !error; msg = error && error.message;
-    }
-    btn.disabled = false;
-    if (!ok) { m.textContent = "مقدرتش أحفظ: " + msg + " — اطلب لينك جديد من «نسيت كلمة السر»."; m.classList.add("show"); return; }
-    location.replace(location.pathname);
-  };
-  $("#forgot").onclick = async e => {
-    e.preventDefault();
-    const email = $("#loginform").email.value.trim(), m = $("#loginmsg");
-    if (!email) { m.textContent = "اكتب إيميلك فوق الأول."; m.classList.add("show"); return; }
-    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-    m.style.background = "#e7f2ee"; m.style.color = "var(--brand)";
-    m.textContent = "لو الإيميل ده مسجل، هيوصلك لينك تختار منه كلمة السر. شوف الـ Inbox والـ Spam."; m.classList.add("show");
-  };
-  // تنبيه الطلبات الجديدة: صوت + إشعار من المتصفح + عداد في عنوان التاب (طول ما الصفحة مفتوحة)
-  let lastId = null, unseen = 0, actx = null;
-  const bellLabel = () => { $("#bell").textContent = ("Notification" in window && Notification.permission === "granted") ? "🔔 التنبيه شغال" : "🔔 فعّل التنبيه"; };
-  $("#bell").onclick = async () => {
-    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); await actx.resume(); } catch (e) {}
-    if ("Notification" in window && Notification.permission !== "granted") { try { await Notification.requestPermission(); } catch (e) {} }
-    bellLabel(); ding();
-  };
-  function ding(){
-    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      [0, 0.18, 0.36].forEach((t, i) => { const o = actx.createOscillator(), g = actx.createGain();
-        o.frequency.value = [880, 1175, 1568][i]; o.connect(g); g.connect(actx.destination);
-        g.gain.setValueAtTime(0.0001, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.3, actx.currentTime + t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + t + 0.25); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + 0.3); });
-    } catch (e) {}
-  }
-  function checkNew(){
-    const maxId = orders.reduce((m, o) => Math.max(m, o.id || 0), 0);
-    if (lastId !== null && maxId > lastId) {
-      const fresh = orders.filter(o => o.id > lastId);
-      unseen += fresh.length; ding();
-      document.title = `(${unseen}) طلب جديد — لوحة التحكم`;
-      if ("Notification" in window && Notification.permission === "granted") fresh.forEach(o => {
-        try { new Notification("طلب جديد " + (o.country === "SA" ? "🇸🇦" : "🇪🇬") + " " + o.order_no, { body: `${o.product_name} × ${o.qty} — ${o.total} ${o.currency}\n${o.governorate || ""}`, tag: o.order_no }); } catch (e) {}
-      });
-    }
-    if (lastId === null || maxId > lastId) lastId = maxId;
-  }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) { unseen = 0; document.title = "لوحة التحكم"; } });
-  $("#logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
-  $("#refresh").onclick = load;
-  $("#q").oninput = render;
-  $("#range").onchange = load;
-  $("#cc").onchange = () => { kpis(); render(); };
-  const view = () => orders.filter(o => !$("#cc").value || o.country === $("#cc").value);
-
-  async function load(){
-    const days = +$("#range").value;
-    const since = new Date(Date.now() - days*864e5).toISOString();
-    const { data, error } = await sb.from("orders").select("*").gte("created_at", since).order("created_at", { ascending:false }).limit(2000);
-    if (error) { $("#list").innerHTML = `<div class="empty">مش قادر أجيب الطلبات: ${esc(error.message)}<br>اتأكد إن إيميلك متضاف في جدول admins.</div>`; return; }
-    orders = data || [];
-    checkNew();
-    const lr = await sb.from("leads").select("*").eq("converted", false).gte("created_at", since).order("created_at", { ascending:false }).limit(500);
-    leads = lr.data || [];
-    kpis(); render();
-  }
-
-  function kpis(){
-    const today = new Date().toDateString(), mStart = new Date(); mStart.setDate(1); mStart.setHours(0,0,0,0);
-    const V = view(), month = V.filter(o => new Date(o.created_at) >= mStart);
-    $("#k-today").textContent = V.filter(o => new Date(o.created_at).toDateString() === today).length;
-    $("#k-new").textContent = V.filter(o => o.status === "new").length;
-    const del = V.filter(o => o.status === "delivered").length, ret = V.filter(o => o.status === "returned").length;
-    $("#k-rate").textContent = (del + ret) ? Math.round(del / (del + ret) * 100) + "%" : "—";
-    const rev = {}; month.filter(o => o.status === "delivered").forEach(o => rev[o.currency] = (rev[o.currency]||0) + o.total);
-    $("#k-rev").textContent = Object.keys(rev).length ? Object.entries(rev).map(([c,v]) => money(v,c)).join(" + ") : "0";
-    $("#k-month").textContent = month.length;
-  }
-
-  function render(){
-    const V = view();
-    const counts = {}; V.forEach(o => counts[o.status] = (counts[o.status]||0) + 1);
-    $("#tabs").innerHTML = [["all","الكل",V.length], ...Object.entries(STATUS).map(([k,v]) => [k,v,counts[k]||0])]
-      .map(([k,v,c]) => `<button class="tab ${tab===k?"on":""}" data-t="${k}">${v}<i>${c}</i></button>`).join("")
-      + `<button class="tab ${tab==="leads"?"on":""}" data-t="leads">📝 فورمات ناقصة<i>${leadsView().length}</i></button>`
-      + `<button class="tab ${tab==="stats"?"on":""}" data-t="stats">📊 إحصائيات</button>`;
-    document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
-
-    const q = $("#q").value.trim();
-    if (tab === "leads") { renderLeads(q); return; }
-    if (tab === "stats") { renderStats(); return; }
-    const phoneCount = {}; orders.forEach(o => phoneCount[o.phone] = (phoneCount[o.phone]||0) + 1);
-    const rows = V.filter(o => (tab === "all" || o.status === tab) &&
-      (!q || [o.customer_name, o.phone, o.order_no].some(x => String(x||"").includes(q))));
-    if (!rows.length) { $("#list").innerHTML = `<div class="empty">مفيش طلبات هنا.</div>`; return; }
-
-    $("#list").innerHTML = rows.map(o => {
-      const d = new Date(o.created_at);
-      const waMsg = `أهلاً ${o.customer_name} 👋\nمعاك ${S.name}. بنأكد طلبك رقم ${o.order_no}:\n${o.product_name} × ${o.qty}\nالإجمالي ${o.total} ${CUR[o.currency]||""} (الدفع عند الاستلام)${o.addon_name ? "\n+ " + o.addon_name : ""}\nالعنوان: ${o.governorate} - ${o.city} - ${o.address}\nلو البيانات مظبوطة رد بـ «تمام» ونشحنلك على طول.`;
-      const intl = o.country === "SA" ? "966" + o.phone.slice(1) : "2" + o.phone;
-      return `<div class="ord" data-id="${o.id}">
-        <div>
-          <div class="no">${o.country === "SA" ? "🇸🇦" : "🇪🇬"} ${esc(o.order_no)} <span class="st st-${o.status}">${STATUS[o.status]}</span> ${(o.flags||[]).map(f => `<span class="dup">${FLAG[f]||f}</span>`).join(" ")} ${phoneCount[o.phone] > 1 && !(o.flags||[]).includes("duplicate") ? `<span class="dup">⚠ ${phoneCount[o.phone]} طلبات من نفس الرقم</span>` : ""}</div>
-          <div>${esc(o.product_name)} × ${o.qty}${o.addon_name ? ` <span class="meta">+ ${esc(o.addon_name)}</span>` : ""} — <b>${money(o.total, o.currency)}</b></div>
-          <div class="meta">${d.toLocaleDateString("ar-EG")} ${d.toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"})} • المصدر: ${esc(o.source||"-")}</div>
-        </div>
-        <div>
-          <div><b>${esc(o.customer_name)}</b> — <span dir="ltr">${esc(o.phone)}</span></div>
-          <div class="meta">${esc(o.governorate)} • ${esc(o.city)} • ${esc(o.address)}</div>
-          ${o.landmark ? `<div class="meta">📍 ${esc(o.landmark)}</div>` : ""}
-          ${o.notes ? `<div class="meta">📝 ${esc(o.notes)}</div>` : ""}
-          <input class="note" placeholder="ملاحظة داخلية…" value="${esc(o.admin_note||"")}">
-        </div>
-        <div class="acts">
-          <a class="wa" href="https://wa.me/${intl}?text=${encodeURIComponent(waMsg)}" target="_blank" rel="noopener">واتساب تأكيد</a>
-          <a href="tel:${esc(o.phone)}">اتصال</a>
-          <select class="stsel">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${k===o.status?"selected":""}>${v}</option>`).join("")}</select>
-        </div>
-      </div>`;
-    }).join("");
-
-    document.querySelectorAll(".ord").forEach(el => {
-      const id = +el.dataset.id;
-      el.querySelector(".stsel").onchange = e => save(id, { status: e.target.value });
-      el.querySelector(".note").onchange = e => save(id, { admin_note: e.target.value });
-    });
-  }
-
-  // ---------- الإحصائيات ----------
-  function renderStats(){
-    const V = view();
-    if (!V.length) { $("#list").innerHTML = `<div class="empty">مفيش طلبات في الفترة دي لسه.</div>`; return; }
-    const isDel = o => o.status === "delivered", isRet = o => o.status === "returned";
-    const rate = (d, r) => (d + r) ? Math.round(d / (d + r) * 100) : null;
-    const pct = v => v === null ? "—" : v + "%";
-    const real = V.filter(o => o.status !== "cancelled");
-    const del = real.filter(isDel), ret = real.filter(isRet);
-    const revBy = {}; del.forEach(o => revBy[o.currency] = (revBy[o.currency]||0) + o.total);
-    const aovBy = {}; const cnt = {}; real.forEach(o => { aovBy[o.currency] = (aovBy[o.currency]||0) + o.total; cnt[o.currency] = (cnt[o.currency]||0) + 1; });
-    const fmtCur = obj => Object.keys(obj).length ? Object.entries(obj).map(([c,v]) => money(v,c)).join(" + ") : "0";
-    const aov = Object.fromEntries(Object.entries(aovBy).map(([c,v]) => [c, Math.round(v / cnt[c])]));
-    const addonRate = real.length ? Math.round(real.filter(o => o.addon_id).length / real.length * 100) : 0;
-    const multiRate = real.length ? Math.round(real.filter(o => o.qty > 1).length / real.length * 100) : 0;
-    const cancelRate = Math.round(V.filter(o => o.status === "cancelled").length / V.length * 100);
-    const open = real.filter(o => ["new","confirmed","shipped"].includes(o.status)).length;
-
-    const group = (keyFn, label) => {
-      const g = {};
-      real.forEach(o => { const k = keyFn(o) || "غير معروف"; (g[k] = g[k] || { n:0, d:0, r:0, rev:{} }); g[k].n++; if (isDel(o)) { g[k].d++; g[k].rev[o.currency] = (g[k].rev[o.currency]||0) + o.total; } if (isRet(o)) g[k].r++; });
-      const rows = Object.entries(g).sort((a,b) => b[1].n - a[1].n);
-      return `<div class="st-card"><h3>${label}</h3><div class="st-scroll"><table class="st"><thead><tr><th>${label}</th><th>طلبات</th><th>اتسلم</th><th>مرتجع</th><th>نسبة التسليم</th><th>مبيعات اتسلمت</th></tr></thead><tbody>${
-        rows.map(([k,v]) => { const r = rate(v.d, v.r); const cls = r === null ? "" : r >= 75 ? "good" : r >= 60 ? "mid" : "bad";
-          return `<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.d}</td><td>${v.r}</td><td><span class="rt ${cls}">${pct(r)}</span></td><td>${fmtCur(v.rev)}</td></tr>`; }).join("")
-      }</tbody></table></div></div>`;
-    };
-    const srcName = s => { if (!s) return "مباشر"; const x = String(s).split("|")[0].toLowerCase(); return ({facebook:"فيسبوك",fb:"فيسبوك",instagram:"إنستجرام",ig:"إنستجرام",tiktok:"تيك توك",whatsapp:"واتساب",direct:"مباشر"})[x] || s; };
-
-    $("#list").innerHTML = `
-      <div class="kpis st-kpis">
-        <div class="kpi"><small>نسبة التسليم (اتسلم ÷ اتسلم+مرتجع)</small><b>${pct(rate(del.length, ret.length))}</b></div>
-        <div class="kpi"><small>مبيعات اتسلمت</small><b>${fmtCur(revBy)}</b></div>
-        <div class="kpi"><small>متوسط قيمة الطلب</small><b>${fmtCur(aov)}</b></div>
-        <div class="kpi"><small>طلبات لسه مفتوحة</small><b>${open}</b></div>
-        <div class="kpi"><small>بياخدوا الإضافة / عرض القطعتين</small><b>${addonRate}% / ${multiRate}%</b></div>
-      </div>
-      <p class="meta" style="margin:0 0 12px">الملغي (${cancelRate}% من الطلبات) مش داخل في الحسابات. النسبة بتظهر بس للي وصل لنتيجة (اتسلم أو مرتجع). أخضر ≥ 75% • أصفر 60–74% • أحمر أقل من 60%.</p>
-      ${group(o => srcName(o.source), "مصدر الطلب")}
-      ${group(o => (o.country === "SA" ? "🇸🇦 " : "") + o.governorate, "المحافظة / المنطقة")}
-      ${group(o => o.product_name, "المنتج")}`;
-  }
-
-  function leadsView(){ return leads.filter(l => !$("#cc").value || l.country === $("#cc").value); }
-  function renderLeads(q){
-    const rows = leadsView().filter(l => !q || [l.name, l.phone].some(x => String(x||"").includes(q)));
-    if (!rows.length) { $("#list").innerHTML = `<div class="empty">مفيش فورمات ناقصة. 👌</div>`; return; }
-    $("#list").innerHTML = `<p class="meta" style="margin:0 0 8px">ناس كتبوا رقمهم ومكمّلوش الطلب. ابعتلهم رسالة واحدة بس — متزنّش.</p>` + rows.map(l => {
-      const p = S.products.find(x => x.id === l.product_id);
-      const intl = l.country === "SA" ? "966" + l.phone.slice(1) : "2" + l.phone;
-      const msg = `أهلاً${l.name ? " " + l.name : ""} 👋 معاك ${S.name}. لاحظنا إنك كنت بتطلب ${p ? p.name : "منتج"} ومكمّلتش. لو عندك أي سؤال أو حابب نكمّل الطلب معاك هنا، إحنا موجودين.`;
-      const d = new Date(l.created_at);
-      return `<div class="ord" style="grid-template-columns:1.3fr 1fr auto"><div><b>${esc(l.name||"بدون اسم")}</b> — <span dir="ltr">${esc(l.phone)}</span><div class="meta">${p ? esc(p.name) : esc(l.product_id||"")} • ${d.toLocaleDateString("ar-EG")} ${d.toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"})} • ${esc(l.source||"-")}</div></div><div></div>
-        <div class="acts"><a class="wa" href="https://wa.me/${intl}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">واتساب متابعة</a><a href="#" data-lead="${l.id}">تم ✓</a></div></div>`;
-    }).join("");
-    document.querySelectorAll("[data-lead]").forEach(a => a.onclick = async e => {
-      e.preventDefault(); const id = +a.dataset.lead;
-      await sb.from("leads").update({ converted: true }).eq("id", id);
-      leads = leads.filter(x => x.id !== id); render();
-    });
-  }
-
-  async function save(id, patch){
-    const { error } = await sb.from("orders").update(patch).eq("id", id);
-    if (error) { alert("مقدرتش أحفظ: " + error.message); return; }
-    const o = orders.find(x => x.id === id); Object.assign(o, patch);
-    kpis(); render();
-  }
-
-  // تصدير الطلبات المتأكدة (أو التاب الحالي) لملف CSV يفتح في Excel — للرفع على بوسطة
-  $("#csv").onclick = () => {
-    const list = view().filter(o => tab === "all" ? true : o.status === tab);
-    if (!list.length) { alert("مفيش طلبات في التاب ده."); return; }
-    if (tab === "leads" || tab === "stats") { alert("التصدير للطلبات بس — اختار تاب طلبات."); return; }
-    const head = ["الدولة","العملة","رقم الطلب","اسم العميل","الموبايل","المحافظة","المدينة","العنوان","علامة مميزة","المنتج","الكمية","مبلغ التحصيل","ملاحظات","الحالة","التاريخ"];
-    const cell = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
-    const lines = [head.map(cell).join(",")].concat(list.map(o => [o.country,o.currency,o.order_no,o.customer_name,o.phone,o.governorate,o.city,o.address,o.landmark,o.product_name + (o.addon_name ? " + " + o.addon_name : ""),o.qty,o.total,o.notes,STATUS[o.status],new Date(o.created_at).toLocaleDateString("en-GB")].map(cell).join(",")));
-    const blob = new Blob(["﻿" + lines.join("\r\n")], { type:"text/csv;charset=utf-8" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `orders-${tab}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
-  };
-
-  boot();
-})();
-</script>
+<script src="admin.js?v=2"></script>
 </body>
 </html>
