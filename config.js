@@ -42,6 +42,7 @@ window.STORE = {
   products: [
     {
       id: "heater-1500", taager: "EG 12438",
+      video: "https://media.taager.com/f54741d8-45b2-4d3c-a64a-39274a0786e8.mp4",
       name: "دفاية ووناسة محمولة 1500 وات",
       subtitle: "دفا سريع لأوضتك أو مكتبك… وتنقلها معاك من مكان لمكان",
       price: 949, priceSA: null,
@@ -142,6 +143,7 @@ window.STORE = {
     },
     {
       id: "seat-cover", taager: "EG 21039",
+      video: "https://media.taager.com/81a478db-ff59-44ff-b348-9cd30a8efef9.mp4",
       name: "فرش كراسي عربية ضد المية",
       subtitle: "حافظ على كراسي عربيتك من المية والأكل والوسخ",
       price: 949, priceSA: null,

@@ -65,6 +65,7 @@
   const media = (p, cls = "") => p.images && p.images.length
     ? `<img src="${p.images[0]}" alt="${p.name}" class="${cls}" loading="lazy">`
     : (ICONS[p.icon] || "");
+  const vidTag = p => `<video class="pvid" src="${p.video}" poster="${(p.images || [])[0] || ""}" autoplay muted loop playsinline controls preload="metadata" aria-label="فيديو ${p.name}"></video>`;
   const chips = p => (p.specs || []).map(x => `<span class="chip">${x}</span>`).join("");
   // ---------- مواعيد التوصيل (تواريخ حقيقية) ----------
   const DAYS = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
@@ -152,7 +153,7 @@
     if (!list.length) { $("#products").innerHTML = `<p style="color:var(--muted);text-align:center">المنتجات هتنزل في ${C.name} قريب.</p>`; return; }
     $("#products").innerHTML = list.map(p => `
       <a class="pcard" href="product.html?p=${p.id}">
-        <div class="mat">${media(p)}</div>
+        <div class="mat">${media(p)}${p.video ? `<span class="vbadge">▶ فيديو</span>` : ""}</div>
         <div class="body">
           <h3>${p.name}</h3><div class="sub">${p.subtitle}</div>
           <div class="chips">${chips(p)}</div>
@@ -176,8 +177,8 @@
     const o2 = offers[2], save2 = o2 ? priceOf(p) * 2 - o2 : 0;
     $("#pp").innerHTML = `
       <div class="gallery">
-        <div class="mat" id="mainimg">${media(p)}${imgs.length > 1 ? `<span class="count" id="imgcount">١ / ${imgs.length.toLocaleString("ar-EG")}</span>` : ""}</div>
-        ${imgs.length > 1 ? `<div class="thumbs">${imgs.map((s, i) => `<img src="${s}" data-i="${i}" class="${i ? "" : "on"}" alt="${p.name} — صورة ${i + 1}" loading="lazy">`).join("")}</div>` : ""}
+        <div class="mat" id="mainimg">${p.video ? vidTag(p) : media(p)}</div>
+        ${(imgs.length > 1 || p.video) ? `<div class="thumbs">${p.video ? `<button type="button" class="vthumb on" aria-label="شغّل فيديو المنتج"><img src="${imgs[0]}" alt=""><span>▶</span></button>` : ""}${imgs.map((s, i) => `<img src="${s}" data-i="${i}" class="${(i || p.video) ? "" : "on"}" alt="${p.name} — صورة ${i + 1}" loading="lazy">`).join("")}</div>` : ""}
       </div>
       <div class="pinfo">
         <h1>${p.name}</h1><div class="sub">${p.subtitle}</div>
@@ -204,10 +205,10 @@
         <li><h3>هنكلمك نأكد</h3><p>مكالمة قصيرة نتأكد فيها من الطلب والعنوان.</p></li>
         <li><h3>استلم وادفع</h3><p>المندوب بيوصلك، تشوف المنتج، وتدفع كاش.</p></li>
       </ol>`;
-    document.querySelectorAll(".thumbs img").forEach(t => t.onclick = () => {
-      document.querySelectorAll(".thumbs img").forEach(x => x.classList.remove("on")); t.classList.add("on");
-      $("#mainimg").querySelector("img").src = t.src;
-      const c = $("#imgcount"); if (c) c.textContent = (+t.dataset.i + 1).toLocaleString("ar-EG") + " / " + imgs.length.toLocaleString("ar-EG");
+    const thumbsAll = [...document.querySelectorAll(".thumbs > img, .thumbs > .vthumb")];
+    thumbsAll.forEach(t => t.onclick = () => {
+      thumbsAll.forEach(x => x.classList.remove("on")); t.classList.add("on");
+      $("#mainimg").innerHTML = t.classList.contains("vthumb") ? vidTag(p) : `<img src="${t.src}" alt="${t.alt}">`;
     });
     setupForm(p);
     const bar = $("#buybar");
