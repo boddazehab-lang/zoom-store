@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>sending…</title><body style="font-family:sans-serif">بيبعت الصورة…
+<script>
+(async () => {
+  const name = new URLSearchParams(location.search).get("f") || "fb-cover.png";
+  const blob = await (await fetch(name + "?x=" + Date.now())).blob();
+  const buf = await blob.arrayBuffer();
+  (window.opener || parent).postMessage({ opsFile: true, name, type: blob.type, buf }, "*", [buf]);
+  document.body.textContent = "اتبعتت ✓";
+  setTimeout(() => window.close(), 800);
+})();
+</script>
