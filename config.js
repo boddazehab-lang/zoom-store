@@ -33,7 +33,7 @@ window.STORE = {
   supabaseUrl: "https://nxrnfjwatgpcavesoyhs.supabase.co",                   // مثال: https://abcd1234.supabase.co
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54cm5mandhdGdwY2F2ZXNveWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2Njk2MTMsImV4cCI6MjEwODI0NTYxM30.hGDyGjBO_qq1FqAiFfRJxaO-gNYTkISsd4ofRufTt3Y",               // الـ anon public key
 
-  metaPixelId: "",                   // رقم Facebook Pixel (اختياري، للإعلانات)
+  metaPixelId: "1633906028770855",                 // رقم Facebook Pixel (اختياري، للإعلانات)
   tiktokPixelId: "",                 // رقم TikTok Pixel (اختياري)
 
   // المنتجات (من تاجر). القاعدة: كل منتج لازم يكون عنده فيديو حقيقي (video).
