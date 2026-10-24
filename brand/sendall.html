@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>Ops – sending videos…</title><body style="font-family:sans-serif;padding:12px">بيبعت الفيديوهات… <span id=n>0</span>/12
+<script>
+(async () => {
+  const ids = ["heater-kumtel","gas-heater-stove","heater-1500","crepe-maker","seat-cover","dinex-vacuum","ip-camera","air-mattress","storage-tower-v","solar-lantern","power-station","qatayef-press"];
+  const dir = new URLSearchParams(location.search).get("d") || "reels-ig";
+  let i = 0;
+  for (const id of ids) {
+    const name = dir + "/" + id + ".mp4";
+    const blob = await (await fetch(name + "?x=" + Date.now())).blob();
+    const buf = await blob.arrayBuffer();
+    window.opener.postMessage({ opsFile: true, name: id, type: blob.type, buf }, "*", [buf]);
+    document.getElementById("n").textContent = ++i;
+  }
+  document.body.textContent = "خلاص ✓ — اقفل الشباك ده";
+  setTimeout(() => window.close(), 1500);
+})();
+</script>
